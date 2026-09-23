@@ -32,7 +32,7 @@ saga_server <- function(input, output, session) {
     scenarios_rv$data[[scen_id]] <- new_scen
   })
   
-  output$plot_ctask <- renderPlot({
+  output$plot_ctask <- renderPlotly({
     baselines <- data.frame(
       Scenario = c("Manuel"),
       C_task = c(cost_manual_task()),
@@ -53,7 +53,7 @@ saga_server <- function(input, output, session) {
       df_plot <- bind_rows(df_plot, current)
     }
     
-    ggplot(df_plot, aes(x = Scenario, y = C_task, fill = Type)) +
+    p <- ggplot(df_plot, aes(x = Scenario, y = C_task, fill = Type)) +
       geom_col(width = 0.5) +
       geom_text(aes(label = sprintf("%.2f €", C_task)), vjust = -0.5, color = "white", size = 5) +
       scale_fill_manual(values = c("Humain" = "#555555", "Agent IA" = "#D4850F")) +
@@ -66,12 +66,13 @@ saga_server <- function(input, output, session) {
         axis.text = element_text(color = "white"),
         legend.position = "none"
       )
-  }, bg = "transparent")
+    ggplotly(p, tooltip = c("x", "y")) %>% layout(plot_bgcolor="transparent", paper_bgcolor="transparent")
+  })
   
-  output$plot_roi <- renderPlot({
-    df_roi <- compute_roi(cost_manual_task(), cost_ia_task(), input$vol)
+  output$plot_roi <- renderPlotly({
+    df_roi <- compute_roi(cost_manual_task(), cost_ia_task(), input$vol, input$build_ia, input$build_manual)
     
-    ggplot(df_roi, aes(x = Mois, y = Cout_Cumule, color = Type)) +
+    p <- ggplot(df_roi, aes(x = Mois, y = Cout_Cumule, color = Type)) +
       geom_line(linewidth = 1.5) +
       geom_point(size = 3) +
       scale_color_manual(values = c("Manuel" = "#555555", "Agent IA" = "#D4850F")) +
@@ -86,7 +87,13 @@ saga_server <- function(input, output, session) {
         legend.position = "bottom",
         legend.title = element_blank()
       )
-  }, bg = "transparent")
+    ggplotly(p, tooltip = c("x", "y")) %>% layout(
+      plot_bgcolor="transparent", 
+      paper_bgcolor="transparent",
+      legend = list(orientation = "h", x = 0.5, y = -0.3, xanchor = "center", title = list(text = "")),
+      margin = list(b = 60)
+    )
+  })
   
   # -- Onglet 2 : Télémétrie --
   

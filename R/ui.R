@@ -12,26 +12,28 @@ saga_ui <- function() {
       tags$script(id = "MathJax-script", async = NA, src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js")
     ),
     
-    nav_panel("Simulateur & Comparaison",
+    nav_panel("Manuel vs Agentique",
       layout_sidebar(
         sidebar = sidebar(
           title = "Paramètres de la Tâche",
-          numericInput("vol", "Volume mensuel (V) :", value = 50, min = 1),
+          numericInput("vol", "Volume de tâches mensuel :", value = 50, min = 1),
           numericInput("time_h", "Temps unitaire manuel (min) :", value = 15, min = 1),
-          numericInput("cost_h", "Coût marginal humain (/h) :", value = 15, min = 1),
-          numericInput("cost_orch", "C₂ : Orchestration mensuelle (€) :", value = 0, min = 0),
-          numericInput("maint_h", "C₃ : Maintenance IA mensuelle (heures) :", value = 2, min = 0),
-          numericInput("cost_tokens", "Coût des tokens par tâche :", value = 0.05, min = 0, step = 0.01),
-          sliderInput("ps", "Taux de succès (P_s) % :", min = 1, max = 100, value = 90),
+          numericInput("cost_h", "Coût marginal humain (€/h) :", value = 15, min = 1),
+          numericInput("cost_tokens", "C\u2081 : Co\u00fbt des tokens par t\u00e2che :", value = 0.05, min = 0, step = 0.01),
+          numericInput("cost_orch", "C\u2082 : Orchestration mensuelle (\u20ac) :", value = 0, min = 0),
+          numericInput("maint_h", "C\u2083 : Maintenance IA mensuelle (heures) :", value = 2, min = 0),
+          sliderInput("ps", HTML("Taux de succ\u00e8s (P<sub>s</sub>) % :"), min = 1, max = 100, value = 90),
+          numericInput("build_ia", "Premier mois Agentique (\u20ac) :", value = 1200, min = 0),
+          numericInput("build_manual", "Premier mois Manuel (\u20ac) :", value = 3500, min = 0),
           actionButton("add_scen", "Sauvegarder Scénario", class = "btn-primary")
         ),
         card(
-          card_header("Comparatif des Coûts par Tâche ($C_{task}$)"),
-          plotOutput("plot_ctask")
+          card_header(HTML("Comparatif des Coûts par Tâche (C<sub>task</sub>)")),
+          plotlyOutput("plot_ctask")
         ),
         card(
           card_header("Point Mort & ROI Cumulé"),
-          plotOutput("plot_roi")
+          plotlyOutput("plot_roi")
         )
       )
     ),

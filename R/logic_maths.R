@@ -13,10 +13,10 @@ compute_composed_reliability <- function(p, n) {
 
 #' Calcul du ROI et Point Mort sur 12 mois
 #' Retourne un dataframe pour ggplot
-compute_roi <- function(cost_manual, cost_agent, volume_mensuel, build_initial = 5000) {
+compute_roi <- function(cost_manual, cost_agent, volume_mensuel, build_initial_ia = 1200, build_initial_manual = 3500) {
   months <- 1:12
-  cost_manual_cum <- cost_manual * volume_mensuel * months
-  cost_agent_cum <- build_initial + (cost_agent * volume_mensuel * months)
+  cost_manual_cum <- build_initial_manual + (cost_manual * volume_mensuel * months)
+  cost_agent_cum <- build_initial_ia + (cost_agent * volume_mensuel * months)
   
   data.frame(
     Mois = rep(months, 2),
