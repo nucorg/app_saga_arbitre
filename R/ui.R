@@ -16,10 +16,11 @@ saga_ui <- function() {
       layout_sidebar(
         sidebar = sidebar(
           title = "Paramètres de la Tâche",
-          numericInput("vol", "Volume mensuel (V) :", value = 1000, min = 1),
+          numericInput("vol", "Volume mensuel (V) :", value = 50, min = 1),
           numericInput("time_h", "Temps unitaire manuel (min) :", value = 15, min = 1),
-          numericInput("cost_h", "Coût marginal humain (/h) :", value = 30, min = 1),
-          numericInput("cost_orch", "Coût d'orchestration (C_orch) :", value = 500, min = 0),
+          numericInput("cost_h", "Coût marginal humain (/h) :", value = 15, min = 1),
+          numericInput("cost_orch", "C₂ : Orchestration mensuelle (€) :", value = 0, min = 0),
+          numericInput("maint_h", "C₃ : Maintenance IA mensuelle (heures) :", value = 2, min = 0),
           numericInput("cost_tokens", "Coût des tokens par tâche :", value = 0.05, min = 0, step = 0.01),
           sliderInput("ps", "Taux de succès (P_s) % :", min = 1, max = 100, value = 90),
           actionButton("add_scen", "Sauvegarder Scénario", class = "btn-primary")
@@ -39,17 +40,18 @@ saga_ui <- function() {
       layout_columns(
         col_widths = c(4, 8),
         card(
-          card_header("Import des logs H4E"),
-          fileInput("file_bill", "1. Rapport de facturation (.md)"),
-          fileInput("file_comp", "2. Rapport de conformité (.md)"),
-          actionButton("process_logs", "Analyser la Télémétrie", class = "btn-primary", width = "100%")
+          card_header("Import des logs"),
+          selectInput("squad_dir", "1. Squad ciblé :", choices = NULL),
+          selectInput("month_dir", "2. Période (Mois) :", choices = NULL),
+          actionButton("process_logs", "Analyser la Télémétrie mensuelle", class = "btn-primary", width = "100%")
         ),
         card(
           card_header("Résultats Réels vs Théorie"),
           layout_columns(
             value_box("Volume Réel", uiOutput("real_vol"), theme_color = "primary"),
             value_box("Succès Réel", uiOutput("real_ps"), theme_color = "primary"),
-            value_box("C_task Réel", uiOutput("real_ctask"), theme_color = "primary")
+            value_box("C_task Réel", uiOutput("real_ctask"), theme_color = "primary"),
+            value_box("Décomposition", uiOutput("real_breakdown"), theme_color = "secondary")
           ),
           markdown("#### Données brutes de facturation (Extrait)"),
           DTOutput("table_billing")

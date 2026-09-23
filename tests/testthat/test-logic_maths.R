@@ -1,3 +1,4 @@
+source("../../R/logic_maths.R")
 test_that("compute_cost fonctionne correctement", {
   # C_task = (C_tokens + C_infra + C_revue) / P_s
   # (0.05 + 0.5 + 0) / 0.9 = 0.55 / 0.9 = 0.6111111

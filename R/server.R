@@ -16,7 +16,7 @@ saga_server <- function(input, output, session) {
     compute_cost(
       c_tokens = input$cost_tokens,
       c_infra = input$cost_orch / input$vol,
-      c_revue_humaine = 0, # Simplification
+      c_revue_humaine = (input$maint_h * input$cost_h) / input$vol,
       p_s = input$ps / 100
     )
   })
@@ -90,31 +90,112 @@ saga_server <- function(input, output, session) {
   
   # -- Onglet 2 : Télémétrie --
   
-  telemetry <- reactiveValues(df = NULL, vol = 0, ps = 0, ctask = 0)
+  telemetry <- reactiveValues(df = NULL, vol = 0, ps = 0, ctask = 0, c_infra = 0, c_tokens = 0, c_maint = 0)
+  # Logic for dynamic dropdowns
+  base_telemetry_dir <- 'telemetry'
+  observe({
+    if(dir.exists(base_telemetry_dir)){
+      squads <- list.dirs(base_telemetry_dir, recursive=FALSE, full.names=FALSE)
+      updateSelectInput(session, 'squad_dir', choices = squads)
+    }
+  })
+  
+  observeEvent(input$squad_dir, {
+    if(input$squad_dir != '') {
+      squad_path <- file.path(base_telemetry_dir, input$squad_dir)
+      months <- list.dirs(squad_path, recursive=FALSE, full.names=FALSE)
+      updateSelectInput(session, 'month_dir', choices = months)
+    }
+  })
   
   observeEvent(input$process_logs, {
-    req(input$file_bill, input$file_comp)
+    req(input$squad_dir, input$month_dir)
     
-    df_bill <- parse_billing_md(input$file_bill$datapath)
-    comp_res <- parse_compliance_md(input$file_comp$datapath)
+    target_dir <- file.path(base_telemetry_dir, input$squad_dir, input$month_dir)
+    if(!dir.exists(target_dir)) return(NULL)
     
-    telemetry$df <- df_bill
-    telemetry$vol <- comp_res$volume
-    telemetry$ps <- comp_res$success_rate
+    bill_files <- list.files(target_dir, pattern = 'cout_carbone_.*\\.md$', full.names = TRUE)
+    comp_files <- list.files(target_dir, pattern = '.*_squad_.*\\.md$', full.names = TRUE)
     
-    # Calcul mock up du Ctask si on a des données de billing
-    if (!is.null(df_bill) && nrow(df_bill) > 0 && ncol(df_bill) >= 2) {
-      # On cherche la colonne contenant le cout. On assume que c'est la dernière ou l'avant dernière avec des chiffres.
-      # Pour faire simple, on essaie de sommer la derniere colonne.
-      cost_col <- ncol(df_bill)
-      total_tokens_cost <- sum(as.numeric(df_bill[[cost_col]]), na.rm = TRUE)
+    # Aggregation billing
+    list_df <- lapply(bill_files, parse_billing_md)
+    # Keep only non-nulls and non-empties
+    list_df <- list_df[sapply(list_df, function(x) !is.null(x) && nrow(x) > 0)]
+    
+    if(length(list_df) == 0) return(NULL)
+    
+    # Remove TOTAL rows and bind rows to aggregate
+    df_all <- do.call(rbind, lapply(list_df, function(df) df[!grepl('^TOTAL', df[['Rôle (Task)']], ignore.case=TRUE), ]))
+    
+    # Group by Role and Model to sum metrics
+    library(dplyr)
+    df_agg <- df_all %>% 
+      group_by(`Rôle (Task)`, `Modèle`) %>%
+      summarise(
+        Reqs = sum(Reqs, na.rm=TRUE),
+        `Prompt (In)` = sum(`Prompt (In)`, na.rm=TRUE),
+        `Cache (In)` = sum(`Cache (In)`, na.rm=TRUE),
+        Output = sum(Output, na.rm=TRUE),
+        Thinking = sum(Thinking, na.rm=TRUE),
+        .groups = 'drop'
+      ) %>% 
+      ungroup()
+    
+    # Aggregation compliance
+    list_comp <- lapply(comp_files, parse_compliance_md)
+    total_vol <- 0
+    sum_vol_ps <- 0
+    for(res in list_comp){
+      total_vol <- total_vol + res$volume
+      sum_vol_ps <- sum_vol_ps + (res$volume * res$success_rate)
+    }
+    avg_ps <- if(total_vol > 0) sum_vol_ps / total_vol else 0
+    
+    telemetry$df <- df_agg
+    telemetry$vol <- total_vol
+    telemetry$ps <- round(avg_ps, 1)
+    
+    if(nrow(df_agg) > 0) {
+      compute_api_row <- function(mod, p_in, c_in, out, thk) {
+        if (is.na(p_in)) p_in <- 0
+        if (is.na(c_in)) c_in <- 0
+        if (is.na(out)) out <- 0
+        if (is.na(thk)) thk <- 0
+        
+        if (grepl('pro', mod, ignore.case=TRUE)) {
+          prix_in <- 1.25; prix_out <- 5.00
+        } else if (grepl('flash', mod, ignore.case=TRUE)) {
+          prix_in <- 0.075; prix_out <- 0.30
+        } else {
+          prix_in <- 1.00; prix_out <- 4.00
+        }
+        
+        cost_in <- (p_in * prix_in + c_in * (prix_in * 0.25)) / 1000000
+        cost_out <- ((out + thk) * prix_out) / 1000000
+        cost_in + cost_out
+      }
       
-      c_infra <- input$cost_orch / max(1, telemetry$vol) # on utilise C_orch configuré dans l'onglet 1
+      total_api_cost <- sum(mapply(
+        compute_api_row,
+        df_agg[['Modèle']],
+        as.numeric(df_agg[['Prompt (In)']]),
+        as.numeric(df_agg[['Cache (In)']]),
+        as.numeric(df_agg[['Output']]),
+        as.numeric(df_agg[['Thinking']])
+      ))
+      
+      c_infra <- input$cost_orch / max(1, telemetry$vol)
+      c_tokens_unitaire <- total_api_cost / max(1, telemetry$vol)
+      c_maint <- (input$maint_h * input$cost_h) / max(1, telemetry$vol)
+      
+      telemetry$c_infra <- c_infra
+      telemetry$c_tokens <- c_tokens_unitaire
+      telemetry$c_maint <- c_maint
       
       telemetry$ctask <- compute_cost(
-        c_tokens = total_tokens_cost / max(1, telemetry$vol), 
+        c_tokens = c_tokens_unitaire, 
         c_infra = c_infra, 
-        c_revue_humaine = 0, 
+        c_revue_humaine = c_maint, 
         p_s = max(0.01, telemetry$ps/100)
       )
     }
@@ -122,7 +203,29 @@ saga_server <- function(input, output, session) {
   
   output$real_vol <- renderUI({ telemetry$vol })
   output$real_ps <- renderUI({ paste0(telemetry$ps, " %") })
-  output$real_ctask <- renderUI({ paste0(round(telemetry$ctask, 4), " €") })
+  output$real_ctask <- renderUI({ sprintf("%.2f €", telemetry$ctask) })
+  
+  output$real_breakdown <- renderUI({
+    if (telemetry$vol == 0) return(tags$span("En attente de données..."))
+    HTML(sprintf(
+      "<div style='font-size: 0.35em; line-height: 1.2; color: #FFFFFF; font-weight: normal;'>
+       <strong>C\u2081 (API) :</strong> %.2f €<br/>
+       <strong>C\u2082 (Infra) :</strong> %.2f €<br/>
+       <strong>C\u2083 (Maint) :</strong> %.2f €<br/>
+       <strong>P<sub>s</sub> (Succès) :</strong> %.2f<br/>
+       <hr style='margin: 4px 0; border-color: rgba(255,255,255,0.2);'/>
+       <i>(%.2f + %.2f + %.2f) &divide; %.2f</i>
+       </div>",
+       telemetry$c_tokens, 
+       telemetry$c_infra,
+       telemetry$c_maint,
+       telemetry$ps / 100,
+       telemetry$c_tokens,
+       telemetry$c_infra,
+       telemetry$c_maint,
+       telemetry$ps / 100
+    ))
+  })
   
   output$table_billing <- renderDT({
     req(telemetry$df)

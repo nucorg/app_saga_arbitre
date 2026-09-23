@@ -30,8 +30,13 @@ parse_billing_md <- function(path) {
   # Construction d'un DataFrame simple
   df <- as.data.frame(do.call(rbind, parsed), stringsAsFactors = FALSE)
   
+  if (ncol(df) == 8) {
+    colnames(df) <- c("Rôle (Task)", "PID", "Modèle", "Reqs", "Prompt (In)", "Cache (In)", "Output", "Thinking")
+  }
+  
   # Nettoyage et conversion des chiffres (ex: 1 637 613)
   for (i in seq_along(df)) {
+    df[[i]] <- gsub("\\*\\*", "", df[[i]])
     clean_col <- gsub(" ", "", df[[i]])
     # Remplacer les virgules par des points pour as.numeric
     clean_col <- gsub(",", ".", clean_col)
