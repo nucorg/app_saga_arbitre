@@ -1,0 +1,11 @@
+Pilier,Service,Type_Facturation,Prix_USD,Unite
+1. Runtime,AWS ECS (Hébergement Base),Fixe,50.00,mois
+1. Runtime,AWS Step Functions (Queue),Variable,0.002,exécution
+2. Mémoire,Pinecone (Vector DB),Fixe,70.00,mois
+2. Mémoire,Redis (State Management),Fixe,30.00,mois
+3. LLMOps,LangSmith (Base Plan),Fixe,39.00,mois
+3. LLMOps,LangSmith (Traces extra),Variable,0.005,trace
+4. Outils,Tavily Search API,Variable,0.005,recherche
+4. Outils,LlamaParse,Variable,0.003,page
+5. Sécurité,API Gateway & NLP Filtre local,Fixe,30.00,mois
+6. CI/CD,Runners Tests E2E LLM,Fixe,80.00,mois

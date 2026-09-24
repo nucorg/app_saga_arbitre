@@ -45,3 +45,61 @@ test_that("compute_ctp_monthly produit le bon dataframe et le Genou du mois 3", 
   expect_equal(df$C3[4], 330)
   expect_true(df$Total[3] > df$Total[4])
 })
+
+test_that("compute_c1_usd et compute_c1_eur calculent l'inférence correctement", {
+  # Pour GPT-5 Mini (0.25 IN, 2.00 OUT) avec 8000 IN, 1500 OUT
+  # usd = (0.25 * 8000 + 2.00 * 1500) / 1 000 000 = (2000 + 3000) / 1000000 = 0.005
+  usd <- compute_c1_usd(p_in_1M = 0.25, p_out_1M = 2.00, n_in = 8000, n_out = 1500)
+  expect_equal(usd, 0.005)
+  
+  # Conversion avec un taux imaginaire de 0.88
+  eur <- compute_c1_eur(usd, 0.88)
+  expect_equal(eur, 0.005 * 0.88)
+})
+
+test_that("compute_equivalent_tokens applique bien l'abattement du cache contextuel", {
+  # 100 prompt_in, 100 cache_in -> equiv = 100 + 25 = 125
+  # 50 output, 10 thinking -> equiv = 60
+  res <- compute_equivalent_tokens(prompt_in = 100, cache_in = 100, output = 50, thinking = 10)
+  expect_equal(res$equiv_in, 125)
+  expect_equal(res$equiv_out, 60)
+})
+
+test_that("compute_equivalent_tokens_unit divise correctement par le volume", {
+  res_unit <- compute_equivalent_tokens_unit(equiv_in = 1000, equiv_out = 500, volume = 50)
+  expect_equal(res_unit$equiv_in_unit, 20)
+  expect_equal(res_unit$equiv_out_unit, 10)
+  
+  # Securite volume = 0
+  res_zero <- compute_equivalent_tokens_unit(equiv_in = 1000, equiv_out = 500, volume = 0)
+  expect_equal(res_zero$equiv_in_unit, 1000)
+})
+
+test_that("compute_c2_maths dissocie correctement Fixe et Variable selon la Taxonomie", {
+  # Test classique: Base 100$ fixe + 0.1$ variable unitaire avec V=1000 tasks, Taux = 0.9 EUR
+  # Attendu (EUR) : Fixe = 90, Var_Unit = 0.09, Var_Mensuel = 90. Total = 180 EUR
+  res <- compute_c2_maths(total_fixe_usd = 100, total_var_unit_usd = 0.1, volume_v = 1000, usd_eur_rate = 0.9)
+  
+  expect_equal(res$fixe, 90)
+  expect_equal(res$var_month, 90)
+  expect_equal(res$total, 180)
+  
+  # Si volume = 0, C2 = Uniquement Fixe
+  res_zero <- compute_c2_maths(total_fixe_usd = 100, total_var_unit_usd = 0.1, volume_v = 0, usd_eur_rate = 0.9)
+  expect_equal(res_zero$total, 90)
+})
+
+test_that("compute_h2_cruise calcule correctement les heures d'escalade mensuelles", {
+  # V = 2000 tâches, Taux rejet = 5%, Temps correction = 12 minutes
+  # 2000 * 0.05 = 100 tâches. 100 * (12/60) = 20 heures
+  h2 <- compute_h2_cruise(volume_mensuel = 2000, taux_escalade = 0.05, temps_reprise_minutes = 12)
+  expect_equal(h2, 20)
+  
+  # Si le modèle est parfait (0% d'escalade)
+  h2_parfait <- compute_h2_cruise(volume_mensuel = 2000, taux_escalade = 0, temps_reprise_minutes = 15)
+  expect_equal(h2_parfait, 0)
+  
+  # Protection contre valeurs négatives
+  h2_neg <- compute_h2_cruise(volume_mensuel = -10, taux_escalade = 0.05, temps_reprise_minutes = 12)
+  expect_equal(h2_neg, 0)
+})

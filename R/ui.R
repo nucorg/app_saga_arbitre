@@ -62,6 +62,66 @@ saga_ui <- function() {
       )
     ),
 
+    nav_panel("C2 - Test Infra",
+      layout_sidebar(
+        sidebar = sidebar(
+          title = "Paramètres d'Infrastructure",
+          numericInput("c2_v", "Volume mensuel de tâches (V) :", value = 500, min = 1),
+          numericInput("c2_usd_eur", "Taux (1 USD en EUR) :", value = 0.88, min = 0, step = 0.01),
+          hr(),
+          p(strong("Architecture C2 (Cochez) :")),
+          uiOutput("ui_c2_fixed_choices"),
+          hr(),
+          uiOutput("ui_c2_var_choices")
+        ),
+        layout_columns(
+          col_widths = c(6, 6),
+          value_box("C2: Socle Fixe (Mensuel)", uiOutput("vb_c2_fixe_val"), theme = "secondary", class = "mb-3"),
+          value_box("C2: Charge Variable (× V)", uiOutput("vb_c2_var_val"), theme = "secondary", class = "mb-3")
+        ),
+        layout_columns(
+          col_widths = c(8, 4),
+          card(
+            card_header("Distribution Mensuelle selon les Piliers de la Taxonomie"),
+            plotlyOutput("plot_c2_breakdown")
+          ),
+          value_box(title = HTML("<span>Total C<sub>2</sub> Mensuel (à copier dans CTP)</span>"), value = uiOutput("vb_c2_total_val"), theme = "primary")
+        ),
+        card(
+          card_header("Catalogue FinOps de l'Infrastructure"),
+          DTOutput("table_c2_pricing")
+        )
+      )
+    ),
+
+    nav_panel("C3 - Test Humain",
+      layout_sidebar(
+        sidebar = sidebar(
+          title = "Inducteurs Humains (C3)",
+          numericInput("c3_v", "Volume mensuel de tâches (V) :", value = 500, min = 1),
+          numericInput("c3_w", "Coût horaire marginal (€/h) :", value = 15, min = 1),
+          hr(),
+          p(strong("Phase 1: Calibrage (Build Étendu)")),
+          numericInput("c3_h1_input", "Effort Forfaitaire (h/mois) :", value = 15, min = 0),
+          hr(),
+          p(strong("Phase 2: Croisière (Run)")),
+          sliderInput("c3_escalade", "Taux d'escalade (%) :", min = 0, max = 50, value = 5, step = 0.5),
+          numericInput("c3_t_reprise", "Temps de reprise (minutes/tâche) :", value = 15, min = 1)
+        ),
+        layout_columns(
+          col_widths = c(6, 6),
+          value_box("h1 (Calibrage) - Mois 1 à 3", uiOutput("vb_c3_h1"), theme = "secondary", class = "mb-3",
+                    p("Heures copier/coller -> CTP")),
+          value_box("h2 (Croisière) - Mois 4+", uiOutput("vb_c3_h2"), theme = "primary", class = "mb-3",
+                    p("Heures copier/coller -> CTP"))
+        ),
+        card(
+          card_header("Effort Asymétrique de Maintenance (Mois 1-3 vs Mois 4+)"),
+          plotlyOutput("plot_c3_asym")
+        )
+      )
+    ),
+
     nav_panel("Diagnostic d'Investissement (CTP)",
       layout_sidebar(
         sidebar = sidebar(

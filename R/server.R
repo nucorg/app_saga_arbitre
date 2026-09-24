@@ -106,7 +106,7 @@ saga_server <- function(input, output, session) {
   })
   
   observe({
-    models <- pricing_data()$Identifiant
+    models <- sort(pricing_data()$Identifiant)
     if (length(models) > 0) {
       updateSelectInput(session, "c1_mod_a", choices = models, selected = models[1])
       updateSelectInput(session, "c1_mod_b", choices = models, selected = models[min(2, length(models))])
@@ -127,7 +127,7 @@ saga_server <- function(input, output, session) {
     names(df_disp)[names(df_disp) == "p_in_1M"] <- "p_in_1M (\u20ac)"
     names(df_disp)[names(df_disp) == "p_out_1M"] <- "p_out_1M (\u20ac)"
     
-    datatable(df_disp, options = list(pageLength = 5, dom = 'tip')) %>%
+    datatable(df_disp, options = list(pageLength = 5, dom = 'tip', order = list(list(1, 'asc')))) %>%
       formatRound(columns = c("p_in_1M (\u20ac)", "p_out_1M (\u20ac)"), digits = 3)
   })
   
@@ -153,6 +153,133 @@ saga_server <- function(input, output, session) {
       geom_col(width = 0.5) +
       scale_fill_manual(values = c("A" = "#D4850F", "B" = "#81C784", "C" = "#64B5F6")) +
       labs(y = "Coût C1 par tâche (€)", x = "") +
+      theme_minimal(base_size = 14) +
+      theme(
+        panel.background = element_rect(fill = "transparent", color = NA),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        text = element_text(color = "white"),
+        axis.text = element_text(color = "white"),
+        legend.position = "none"
+      )
+    ggplotly(p, tooltip = c("y")) %>% layout(plot_bgcolor="transparent", paper_bgcolor="transparent")
+  })
+  
+  # -- Onglet C2 (Test Infra) --
+  
+  infra_data <- reactive({
+    if (file.exists("data/pricing_infra.csv")) {
+      read.csv("data/pricing_infra.csv", stringsAsFactors = FALSE)
+    } else {
+      data.frame(Pilier=character(), Service=character(), Type_Facturation=character(), Prix_USD=numeric(), Unite=character())
+    }
+  })
+  
+  observe({
+    df <- infra_data()
+    df_fixe <- df[df$Type_Facturation == "Fixe", ]
+    df_var <- df[df$Type_Facturation == "Variable", ]
+    
+    if (nrow(df) > 0) {
+      choices_fixe <- setNames(df_fixe$Service, paste0(df_fixe$Service, " (~$", df_fixe$Prix_USD, "/", df_fixe$Unite, ")"))
+      choices_var <- setNames(df_var$Service, paste0(df_var$Service, " (~$", df_var$Prix_USD, "/", df_var$Unite, ")"))
+      
+      output$ui_c2_fixed_choices <- renderUI({
+        checkboxGroupInput("c2_fixed_sel", "Services Fixes (Base) :", choices = choices_fixe, selected = df_fixe$Service)
+      })
+      
+      output$ui_c2_var_choices <- renderUI({
+        checkboxGroupInput("c2_var_sel", "Services Variables (Par Tâche) :", choices = choices_var, selected = df_var$Service)
+      })
+    }
+  })
+  
+  output$table_c2_pricing <- renderDT({
+    df <- infra_data()
+    req(input$c2_usd_eur)
+    df$Prix_EUR <- df$Prix_USD * input$c2_usd_eur
+    datatable(df, options = list(pageLength = 10, dom = 'tip')) %>%
+      formatRound(columns = c("Prix_USD", "Prix_EUR"), digits = 3)
+  })
+  
+  c2_computation <- reactive({
+    df <- infra_data()
+    req(input$c2_usd_eur, input$c2_v)
+    
+    # Filter selected
+    df_selected_fixe <- df[df$Service %in% input$c2_fixed_sel, ]
+    df_selected_var <- df[df$Service %in% input$c2_var_sel, ]
+    
+    # Computed in EUR
+    total_fixe_eur <- sum(df_selected_fixe$Prix_USD, na.rm=TRUE) * input$c2_usd_eur
+    total_var_unit_eur <- sum(df_selected_var$Prix_USD, na.rm=TRUE) * input$c2_usd_eur
+    total_var_month_eur <- total_var_unit_eur * input$c2_v
+    
+    total_month <- total_fixe_eur + total_var_month_eur
+    
+    # Breakdown for plotting
+    df_selected <- rbind(df_selected_fixe, df_selected_var)
+    df_selected$Cost_Mensuel_USD <- ifelse(df_selected$Type_Facturation == "Fixe", df_selected$Prix_USD, df_selected$Prix_USD * input$c2_v)
+    df_selected$Cost_Mensuel_EUR <- df_selected$Cost_Mensuel_USD * input$c2_usd_eur
+    
+    df_agg <- aggregate(Cost_Mensuel_EUR ~ Pilier, data = df_selected, sum)
+    
+    list(fixe = total_fixe_eur, var_month = total_var_month_eur, total = total_month, df_agg = df_agg)
+  })
+  
+  output$vb_c2_fixe_val <- renderUI({ h3(sprintf("%.2f €", c2_computation()$fixe)) })
+  output$vb_c2_var_val <- renderUI({ h3(sprintf("%.2f €", c2_computation()$var_month)) })
+  output$vb_c2_total_val <- renderUI({ h2(sprintf("%.2f €", c2_computation()$total), style="margin:0;") })
+  
+  output$plot_c2_breakdown <- renderPlotly({
+    req(c2_computation()$df_agg)
+    df_plot <- c2_computation()$df_agg
+    p <- ggplot(df_plot, aes(x = Pilier, y = Cost_Mensuel_EUR, fill = Pilier)) +
+      geom_col() +
+      labs(y = "Coût C2 Mensuel (€)", x = "") +
+      theme_minimal(base_size = 14) +
+      theme(
+        panel.background = element_rect(fill = "transparent", color = NA),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        text = element_text(color = "white"),
+        axis.text = element_text(color = "white"),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none"
+      )
+    ggplotly(p, tooltip = c("y")) %>% layout(plot_bgcolor="transparent", paper_bgcolor="transparent")
+  })
+  
+  # -- Onglet C3 (Test Humain) --
+  
+  c3_computation <- reactive({
+    req(input$c3_v, input$c3_h1_input, input$c3_escalade, input$c3_t_reprise)
+    
+    h1_val <- input$c3_h1_input
+    h2_val <- compute_h2_cruise(
+      volume_mensuel = input$c3_v,
+      taux_escalade = as.numeric(input$c3_escalade) / 100,
+      temps_reprise_minutes = input$c3_t_reprise
+    )
+    
+    list(h1 = h1_val, h2 = h2_val, w = input$c3_w)
+  })
+  
+  output$vb_c3_h1 <- renderUI({ h3(sprintf("%.1f h", c3_computation()$h1)) })
+  output$vb_c3_h2 <- renderUI({ h3(sprintf("%.1f h", c3_computation()$h2)) })
+  
+  output$plot_c3_asym <- renderPlotly({
+    res <- c3_computation()
+    
+    df_plot <- data.frame(
+      Phase = c("Phase 1 : Calibrage (M1-M3)", "Phase 2 : Croisière (M4+)"),
+      Heures = c(res$h1, res$h2),
+      Cout_Eur = c(res$h1 * res$w, res$h2 * res$w)
+    )
+    df_plot$Label <- paste0(df_plot$Phase, "\n", df_plot$Heures, "h/mois")
+    
+    p <- ggplot(df_plot, aes(x = Phase, y = Cout_Eur, fill = Phase)) +
+      geom_col(width = 0.5) +
+      scale_fill_manual(values = c("Phase 1 : Calibrage (M1-M3)" = "#E57373", "Phase 2 : Croisière (M4+)" = "#81C784")) +
+      labs(y = "Coût C3 Mensuel (€)", x = "") +
       theme_minimal(base_size = 14) +
       theme(
         panel.background = element_rect(fill = "transparent", color = NA),

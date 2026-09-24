@@ -61,3 +61,68 @@ compute_ctp_monthly <- function(c, v, t_horizon, c_orch, kappa, w, h1, h2) {
     Total = monthly_total
   )
 }
+
+#' Calcul du coût de l'inférence C1 (en USD)
+#' @param p_in_1M Prix pour 1M jetons en entrée (USD)
+#' @param p_out_1M Prix pour 1M jetons en sortie (USD)
+#' @param n_in Nombre de jetons en entrée
+#' @param n_out Nombre de jetons en sortie
+compute_c1_usd <- function(p_in_1M, p_out_1M, n_in, n_out) {
+  (p_in_1M * n_in + p_out_1M * n_out) / 1000000
+}
+
+#' Conversion du coût USD vers EUR
+compute_c1_eur <- function(cost_usd, usd_eur_rate) {
+  cost_usd * usd_eur_rate
+}
+
+#' Calcul des jetons équivalents en tenant compte du cache (réduction de 75% sur le prix du cache)
+#' @return list(equiv_in, equiv_out)
+compute_equivalent_tokens <- function(prompt_in, cache_in, output, thinking) {
+  # Les jetons provenant du cache coûtent 25% du prix standard (soit une décote de 75%)
+  equiv_in <- prompt_in + (cache_in * 0.25)
+  equiv_out <- output + thinking
+  list(equiv_in = equiv_in, equiv_out = equiv_out)
+}
+
+#' Mise à l'échelle unitaire (par rapport au volume)
+compute_equivalent_tokens_unit <- function(equiv_in, equiv_out, volume) {
+  if (is.na(volume) || volume <= 0) {
+    return(list(equiv_in_unit = equiv_in, equiv_out_unit = equiv_out))
+  }
+  list(equiv_in_unit = equiv_in / volume, equiv_out_unit = equiv_out / volume)
+}
+
+#' Calcul des composantes C2 Base Fixe et Variables
+#' @param total_fixe_usd Somme des coûts mensuels fixes (USD)
+#' @param total_var_unit_usd Somme unitaire des coûts variables (USD)
+#' @param volume_v Volume mensuel (V)
+#' @param usd_eur_rate Taux de conversion
+#' @return list(fixe_eur, var_month_eur, total_eur)
+compute_c2_maths <- function(total_fixe_usd, total_var_unit_usd, volume_v, usd_eur_rate) {
+  # Base mensuelle fixe convertie
+  fixe_eur <- total_fixe_usd * usd_eur_rate
+  
+  # Le coût variable s'applique par tâche (volume V) 
+  var_unit_eur <- total_var_unit_usd * usd_eur_rate
+  var_month_eur <- var_unit_eur * volume_v
+  
+  list(
+    fixe = fixe_eur,
+    var_month = var_month_eur,
+    total = fixe_eur + var_month_eur
+  )
+}
+
+#' Calcul du temps de maintenance en phase de Croisière (h2)
+#' Basé sur la formule de la Taxonomie C3 :
+#' h2 = Volume * Taux_Escalade * Temps_Reprise
+#' @param volume_mensuel Volume de tâches mensuelles (V)
+#' @param taux_escalade Taux de tâches nécessitant une reprise humaine (entre 0 et 1)
+#' @param temps_reprise_minutes Temps moyen pour traiter manuellement une tâche échouée (en minutes)
+#' @return Nombre d'heures mensuelles en phase de croisière (h2)
+compute_h2_cruise <- function(volume_mensuel, taux_escalade, temps_reprise_minutes) {
+  if (volume_mensuel < 0 || taux_escalade < 0 || temps_reprise_minutes < 0) return(0)
+  
+  (volume_mensuel * taux_escalade) * (temps_reprise_minutes / 60)
+}
