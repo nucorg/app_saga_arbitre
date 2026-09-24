@@ -95,7 +95,138 @@ saga_server <- function(input, output, session) {
     )
   })
   
-  # -- Onglet 2 : Télémétrie --
+  # -- Onglet C1 --
+  
+  pricing_data <- reactive({
+    if (file.exists("data/pricing_models.csv")) {
+      read.csv("data/pricing_models.csv", stringsAsFactors = FALSE)
+    } else {
+      data.frame(Identifiant = character(), Fournisseur = character(), p_in_1M = numeric(), p_out_1M = numeric())
+    }
+  })
+  
+  observe({
+    models <- pricing_data()$Identifiant
+    if (length(models) > 0) {
+      updateSelectInput(session, "c1_mod_a", choices = models, selected = models[1])
+      updateSelectInput(session, "c1_mod_b", choices = models, selected = models[min(2, length(models))])
+      updateSelectInput(session, "c1_mod_c", choices = models, selected = models[min(3, length(models))])
+    }
+  })
+  
+  output$table_c1_pricing <- renderDT({
+    df <- pricing_data()
+    req(input$c1_usd_eur)
+    
+    # Create display dataframe with EUR conversion
+    df_disp <- df
+    df_disp$p_in_1M <- df_disp$p_in_1M * input$c1_usd_eur
+    df_disp$p_out_1M <- df_disp$p_out_1M * input$c1_usd_eur
+    
+    # Rename columns to clearly state currency
+    names(df_disp)[names(df_disp) == "p_in_1M"] <- "p_in_1M (\u20ac)"
+    names(df_disp)[names(df_disp) == "p_out_1M"] <- "p_out_1M (\u20ac)"
+    
+    datatable(df_disp, options = list(pageLength = 5, dom = 'tip')) %>%
+      formatRound(columns = c("p_in_1M (\u20ac)", "p_out_1M (\u20ac)"), digits = 3)
+  })
+  
+  output$plot_c1_compare <- renderPlotly({
+    req(input$c1_mod_a, input$c1_mod_b, input$c1_mod_c, input$c1_usd_eur)
+    df_price <- pricing_data()
+    
+    calc_c1 <- function(mod_id) {
+      row <- df_price[df_price$Identifiant == mod_id, ]
+      if(nrow(row) == 0) return(0)
+      cost_usd <- (row$p_in_1M * input$c1_n_in + row$p_out_1M * input$c1_n_out) / 1000000
+      cost_usd * input$c1_usd_eur
+    }
+    
+    res <- data.frame(
+      Scenario = c("A", "B", "C"),
+      Modele = c(input$c1_mod_a, input$c1_mod_b, input$c1_mod_c),
+      C1 = c(calc_c1(input$c1_mod_a), calc_c1(input$c1_mod_b), calc_c1(input$c1_mod_c))
+    )
+    res$Label <- paste0(res$Scenario, " : ", res$Modele)
+    
+    p <- ggplot(res, aes(x = Label, y = C1, fill = Scenario)) +
+      geom_col(width = 0.5) +
+      scale_fill_manual(values = c("A" = "#D4850F", "B" = "#81C784", "C" = "#64B5F6")) +
+      labs(y = "Coût C1 par tâche (€)", x = "") +
+      theme_minimal(base_size = 14) +
+      theme(
+        panel.background = element_rect(fill = "transparent", color = NA),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        text = element_text(color = "white"),
+        axis.text = element_text(color = "white"),
+        legend.position = "none"
+      )
+    ggplotly(p, tooltip = c("y")) %>% layout(plot_bgcolor="transparent", paper_bgcolor="transparent")
+  })
+  
+  # -- Onglet CTP --
+  
+  ctp_res <- reactive({
+    compute_ctp_totals(
+      c = input$ctp_c,
+      v = input$ctp_v,
+      t_horizon = input$ctp_t,
+      c_orch = input$ctp_orch,
+      kappa = as.numeric(input$ctp_kappa),
+      w = input$ctp_w,
+      h1 = input$ctp_h1,
+      h2 = input$ctp_h2
+    )
+  })
+  
+  output$vb_c1_val <- renderUI({ h3(sprintf("%.0f €", ctp_res()$C1)) })
+  output$vb_c2_val <- renderUI({ h3(sprintf("%.0f €", ctp_res()$C2)) })
+  output$vb_c3_val <- renderUI({ h3(sprintf("%.0f €", ctp_res()$C3)) })
+  output$vb_ctp_val <- renderUI({ h2(sprintf("%.0f €", ctp_res()$CTP), style="margin:0;") })
+  
+  output$plot_ctp_donut <- renderPlotly({
+    res <- ctp_res()
+    df <- data.frame(
+      Couche = c("C1 - API", "C2 - Infra", "C3 - Humain"),
+      Cout = c(res$C1, res$C2, res$C3)
+    )
+    plot_ly(df, labels = ~Couche, values = ~Cout, type = 'pie', textinfo = 'label+percent',
+            marker = list(colors = c("#64B5F6", "#81C784", "#E57373")),
+            hole = 0.4) %>%
+      layout(showlegend = FALSE, plot_bgcolor='transparent', paper_bgcolor='transparent',
+             margin = list(t = 20, b = 20, l = 20, r = 20))
+  })
+  
+  output$plot_ctp_line <- renderPlotly({
+    df_monthly <- compute_ctp_monthly(
+      c = input$ctp_c,
+      v = input$ctp_v,
+      t_horizon = input$ctp_t,
+      c_orch = input$ctp_orch,
+      kappa = as.numeric(input$ctp_kappa),
+      w = input$ctp_w,
+      h1 = input$ctp_h1,
+      h2 = input$ctp_h2
+    )
+    
+    p <- ggplot(df_monthly, aes(x = Mois, y = Total)) +
+      geom_line(color = "#D4850F", linewidth = 1.5) +
+      geom_point(color = "#D4850F", size = 3) +
+      {if(input$ctp_t > 3) geom_vline(xintercept = 3.5, linetype = "dashed", color = "gray50")} +
+      labs(x = "Mois", y = "Coût Mensuel (€)") +
+      scale_x_continuous(breaks = 1:input$ctp_t) +
+      theme_minimal(base_size = 14) +
+      theme(
+        panel.background = element_rect(fill = "transparent", color = NA),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        text = element_text(color = "white"),
+        axis.text = element_text(color = "white"),
+        panel.grid.minor = element_blank()
+      )
+    ggplotly(p, tooltip = c("x", "y")) %>% layout(plot_bgcolor="transparent", paper_bgcolor="transparent")
+  })
+  
+  # -- Onglet 3 : Télémétrie --
   
   telemetry <- reactiveValues(df = NULL, vol = 0, ps = 0, ctask = 0, c_infra = 0, c_tokens = 0, c_maint = 0)
   # Logic for dynamic dropdowns
@@ -136,6 +267,7 @@ saga_server <- function(input, output, session) {
     
     # Group by Role and Model to sum metrics
     library(dplyr)
+    library(dplyr)
     df_agg <- df_all %>% 
       group_by(`Rôle (Task)`, `Modèle`) %>%
       summarise(
@@ -147,8 +279,7 @@ saga_server <- function(input, output, session) {
         .groups = 'drop'
       ) %>% 
       ungroup()
-    
-    # Aggregation compliance
+      
     list_comp <- lapply(comp_files, parse_compliance_md)
     total_vol <- 0
     sum_vol_ps <- 0
@@ -158,6 +289,47 @@ saga_server <- function(input, output, session) {
     }
     avg_ps <- if(total_vol > 0) sum_vol_ps / total_vol else 0
     
+    if (nrow(df_agg) > 0) {
+      tot_row <- data.frame(
+        `Rôle (Task)` = "TOTAL GÉNÉRAL",
+        `Modèle` = "",
+        Reqs = sum(df_agg$Reqs, na.rm = TRUE),
+        `Prompt (In)` = sum(df_agg$`Prompt (In)`, na.rm = TRUE),
+        `Cache (In)` = sum(df_agg$`Cache (In)`, na.rm = TRUE),
+        Output = sum(df_agg$Output, na.rm = TRUE),
+        Thinking = sum(df_agg$Thinking, na.rm = TRUE),
+        check.names = FALSE
+      )
+      
+      tot_in <- tot_row$`Prompt (In)` + (tot_row$`Cache (In)` * 0.25)
+      tot_out <- tot_row$Output + tot_row$Thinking
+      
+      equiv_row <- data.frame(
+        `Rôle (Task)` = "ÉQUIVALENT IN/OUT (BATCH)",
+        `Modèle` = "",
+        Reqs = NA,
+        `Prompt (In)` = tot_in,
+        `Cache (In)` = NA,
+        Output = tot_out,
+        Thinking = NA,
+        check.names = FALSE
+      )
+      
+      equiv_unit <- data.frame(
+        `Rôle (Task)` = "ÉQUIVALENT IN/OUT (UNITAIRE)",
+        `Modèle` = "Copier vers C1 / CTP ->",
+        Reqs = NA,
+        `Prompt (In)` = if (total_vol > 0) tot_in / total_vol else tot_in,
+        `Cache (In)` = NA,
+        Output = if (total_vol > 0) tot_out / total_vol else tot_out,
+        Thinking = NA,
+        check.names = FALSE
+      )
+      
+      df_agg <- rbind(df_agg, tot_row, equiv_row, equiv_unit)
+    }
+    
+    # Aggregation compliance
     telemetry$df <- df_agg
     telemetry$vol <- total_vol
     telemetry$ps <- round(avg_ps, 1)
@@ -182,13 +354,14 @@ saga_server <- function(input, output, session) {
         cost_in + cost_out
       }
       
+      compute_rows <- df_agg[!grepl('TOTAL GÉNÉRAL|ÉQUIVALENT', df_agg[['Rôle (Task)']], ignore.case=TRUE), ]
       total_api_cost <- sum(mapply(
         compute_api_row,
-        df_agg[['Modèle']],
-        as.numeric(df_agg[['Prompt (In)']]),
-        as.numeric(df_agg[['Cache (In)']]),
-        as.numeric(df_agg[['Output']]),
-        as.numeric(df_agg[['Thinking']])
+        compute_rows[['Modèle']],
+        as.numeric(compute_rows[['Prompt (In)']]),
+        as.numeric(compute_rows[['Cache (In)']]),
+        as.numeric(compute_rows[['Output']]),
+        as.numeric(compute_rows[['Thinking']])
       ))
       
       c_infra <- input$cost_orch / max(1, telemetry$vol)
@@ -236,6 +409,6 @@ saga_server <- function(input, output, session) {
   
   output$table_billing <- renderDT({
     req(telemetry$df)
-    datatable(telemetry$df, options = list(pageLength = 5, dom = 't'))
+    datatable(telemetry$df, options = list(pageLength = 15, dom = 't'))
   })
 }

@@ -89,3 +89,21 @@ $$C_{task} = \frac{C_1 + \left(\frac{C_2 + C_3}{Volume}\right)}{P_s}$$
 
 **L'Argument pour votre Firme Minimale :**
 *Oui, je n'ai pas le volume de requêtes d'une grande entreprise, ce qui rend mon temps de réparation ($C_3$) très pénalisant par tâche. Mais comme je suis un solopreneur sans infrastructure lourde sur le cloud ($C_2$ = 0), mon coût total reste ultra-compétitif si je veille à maintenir le système simple et fiable !*
+
+---
+
+## Valeurs initiales dans l'app Shiny
+
+1. ### Le Coût d'orchestration (C₂) = 0 €                                                                                                                                                    
+
+     Puisque tu n'utilises ni bases de données vectorielles payantes en ligne, ni clusters Kubernetes, ni serveurs AWS pour tes déploiements (tout tourne on-premise ou dans un terminal Tmux de ton PC sous Google Workspace dont le forfait est de toute façon amorti), imputer une charge mensuelle d'infrastructure d'IA spécifique est une erreur factuelle. Le coût d'orchestration fantôme au-dessus du prix des API disparaît.                                                                         
+
+  2. ### Le Coût marginal humain = 15 € / heure                                                                                                                                                
+
+       C'est le point de bascule psychologique que le M2 avertit de ne jamais rater.
+
+       En tant que dirigeant d'une firme "Solo", une automatisation qui te fait gagner 5 heures dans le mois ne te permet pas de licencier 5 heures de masse salariale chargée. Tu ne vas pas virer 15 % de toi-même et générer une économie de trésorerie au prix de ton TJM. **Les heures gagnées sont juste "ré-allouées".** La doctrine M2 impose donc d'utiliser un "coût marginal" standard : ce que vaut concrètement le remplacement générique et abstrait de cette charge temporelle libérée, soit environ 12 à 15 €/h. 
+
+  3. ### Le Volume Mensuel par défaut = 50 tâches                                                                                                                                              
+
+       Être une firme minimale signifie opérer des tâches ciblées, souvent peu nombreuses (contrairement à un flux de tickets clients de 100 000 requêtes pour une compagnie aérienne). Les  effets d'échelle seront donc limités; tu ne rattraperas pas tes investissements cachés sur le pur volume. Le simulateur doit te montrer la rentabilité sur de petites séquences de tâches pour ne pas te vendre de fausses promesses visuelles.

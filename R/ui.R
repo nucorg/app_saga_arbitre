@@ -37,6 +37,64 @@ saga_ui <- function() {
         )
       )
     ),
+
+    nav_panel("C1 - Test Inférence",
+      layout_sidebar(
+        sidebar = sidebar(
+          title = "Paramètres de la Tâche",
+          numericInput("c1_n_in", "Jetons en Entrée (n_in) :", value = 8000, min = 1),
+          numericInput("c1_n_out", "Jetons en Sortie (n_out) :", value = 1500, min = 1),
+          numericInput("c1_usd_eur", "Taux (1 USD en EUR) :", value = 0.88, min = 0, step = 0.01),
+          hr(),
+          p(strong("Configuration des Scénarii")),
+          selectInput("c1_mod_a", "Modèle A :", choices = NULL),
+          selectInput("c1_mod_b", "Modèle B :", choices = NULL),
+          selectInput("c1_mod_c", "Modèle C :", choices = NULL)
+        ),
+        card(
+          card_header("Comparatif Brut de l'Inférence (C1) par Tâche"),
+          plotlyOutput("plot_c1_compare")
+        ),
+        card(
+          card_header("Grille Tarifaire Locale"),
+          DTOutput("table_c1_pricing")
+        )
+      )
+    ),
+
+    nav_panel("Diagnostic d'Investissement (CTP)",
+      layout_sidebar(
+        sidebar = sidebar(
+          title = "Paramètres du Dispositif",
+          sliderInput("ctp_t", "Horizon temporel (mois) :", min = 1, max = 24, value = 6),
+          numericInput("ctp_v", "Volume de tâches mensuel :", value = 500, min = 1),
+          numericInput("ctp_c", "Co\u00fbt par tentative (C\u2081) :", value = 0.05, min = 0, step = 0.01),
+          numericInput("ctp_orch", "C\u2082 : Orchestration/mois (\u20ac) :", value = 0, min = 0),
+          radioButtons("ctp_kappa", "Complexit\u00e9 (\u03ba) :", choices = c("Agent simple (\u03ba=1)" = 1, "Multi-outils (\u03ba=4)" = 4, "Multi-agents (\u03ba=12)" = 12), selected = 1),
+          numericInput("ctp_w", "Co\u00fbt horaire humain (w) :", value = 15, min = 1),
+          numericInput("ctp_h1", "Heures/mois (Calibrage h\u2081) :", value = 10, min = 0),
+          numericInput("ctp_h2", "Heures/mois (Croisi\u00e8re h\u2082) :", value = 2, min = 0)
+        ),
+        layout_columns(
+          col_widths = c(3, 3, 3, 3),
+          value_box("Total C\u2081 (API)", uiOutput("vb_c1_val"), theme = "secondary"),
+          value_box("Total C\u2082 (Infra)", uiOutput("vb_c2_val"), theme = "secondary"),
+          value_box("Total C\u2083 (Humain)", uiOutput("vb_c3_val"), theme = "secondary"),
+          value_box("CTP Global", uiOutput("vb_ctp_val"), theme = "primary")
+        ),
+        layout_columns(
+          col_widths = c(6, 6),
+          card(
+            card_header("L'Iceberg des Coûts (Répartition)"),
+            plotlyOutput("plot_ctp_donut")
+          ),
+          card(
+            card_header("Le Genou du Mois 3 (Coût Mensuel)"),
+            plotlyOutput("plot_ctp_line")
+          )
+        )
+      )
+    ),
     
     nav_panel("Télémétrie du Terrain",
       layout_columns(

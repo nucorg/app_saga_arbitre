@@ -1,0 +1,11 @@
+Identifiant,Fournisseur,p_in_1M,p_out_1M
+GPT-5 Mini,OpenAI,0.25,2.00
+Claude Haiku 4.5,Anthropic,1.00,5.00
+GPT-5,OpenAI,1.25,10.00
+Gemini 2.5 Pro,Google,1.25,10.00
+Gemini 3.6 Flash,Google,1.50,7.50
+Gemini 3.1 Pro,Google,2.00,12.00
+GPT-4o,OpenAI,2.50,10.00
+GPT-5.4,OpenAI,2.50,15.00
+Claude Sonnet 4.6,Anthropic,3.00,15.00
+Claude Opus 4.6,Anthropic,5.00,25.00
