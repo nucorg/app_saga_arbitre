@@ -56,7 +56,7 @@ saga_server <- function(input, output, session) {
     p <- ggplot(df_plot, aes(x = Scenario, y = C_task, fill = Type)) +
       geom_col(width = 0.5) +
       geom_text(aes(label = sprintf("%.2f €", C_task)), vjust = -0.5, color = "white", size = 5) +
-      scale_fill_manual(values = c("Humain" = "#555555", "Agent IA" = "#D4850F")) +
+      scale_fill_manual(values = c("Humain" = "#FFFFFF", "Agent IA" = "#D4850F")) +
       labs(y = "Coût Complet par Tâche (€)", x = "") +
       theme_minimal(base_size = 14) +
       theme(
@@ -75,7 +75,7 @@ saga_server <- function(input, output, session) {
     p <- ggplot(df_roi, aes(x = Mois, y = Cout_Cumule, color = Type)) +
       geom_line(linewidth = 1.5) +
       geom_point(size = 3) +
-      scale_color_manual(values = c("Manuel" = "#555555", "Agent IA" = "#D4850F")) +
+      scale_color_manual(values = c("Manuel" = "#FFFFFF", "Agent IA" = "#D4850F")) +
       scale_x_continuous(breaks = 1:12) +
       labs(y = "Coût Cumulé (€)", x = "Mois") +
       theme_minimal(base_size = 14) +
@@ -151,7 +151,7 @@ saga_server <- function(input, output, session) {
     
     p <- ggplot(res, aes(x = Label, y = C1, fill = Scenario)) +
       geom_col(width = 0.5) +
-      scale_fill_manual(values = c("A" = "#D4850F", "B" = "#81C784", "C" = "#64B5F6")) +
+      scale_fill_manual(values = c("A" = "#D4850F", "B" = "#FFFFFF", "C" = "#F5B041")) +
       labs(y = "Coût C1 par tâche (€)", x = "") +
       theme_minimal(base_size = 14) +
       theme(
@@ -233,8 +233,8 @@ saga_server <- function(input, output, session) {
   output$plot_c2_breakdown <- renderPlotly({
     req(c2_computation()$df_agg)
     df_plot <- c2_computation()$df_agg
-    p <- ggplot(df_plot, aes(x = Pilier, y = Cost_Mensuel_EUR, fill = Pilier)) +
-      geom_col() +
+    p <- ggplot(df_plot, aes(x = Pilier, y = Cost_Mensuel_EUR)) +
+      geom_col(fill = "#D4850F") +
       labs(y = "Coût C2 Mensuel (€)", x = "") +
       theme_minimal(base_size = 14) +
       theme(
@@ -278,7 +278,7 @@ saga_server <- function(input, output, session) {
     
     p <- ggplot(df_plot, aes(x = Phase, y = Cout_Eur, fill = Phase)) +
       geom_col(width = 0.5) +
-      scale_fill_manual(values = c("Phase 1 : Calibrage (M1-M3)" = "#E57373", "Phase 2 : Croisière (M4+)" = "#81C784")) +
+      scale_fill_manual(values = c("Phase 1 : Calibrage (M1-M3)" = "#D4850F", "Phase 2 : Croisière (M4+)" = "#FFFFFF")) +
       labs(y = "Coût C3 Mensuel (€)", x = "") +
       theme_minimal(base_size = 14) +
       theme(
@@ -318,7 +318,7 @@ saga_server <- function(input, output, session) {
       Cout = c(res$C1, res$C2, res$C3)
     )
     plot_ly(df, labels = ~Couche, values = ~Cout, type = 'pie', textinfo = 'label+percent',
-            marker = list(colors = c("#64B5F6", "#81C784", "#E57373")),
+            marker = list(colors = c("#D4850F", "#FFFFFF", "#F5B041")),
             hole = 0.4) %>%
       layout(showlegend = FALSE, plot_bgcolor='transparent', paper_bgcolor='transparent',
              margin = list(t = 20, b = 20, l = 20, r = 20))

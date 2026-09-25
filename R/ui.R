@@ -2,12 +2,20 @@ saga_ui <- function() {
   page_navbar(
     title = "SAGA Arbitre - Calculateur IA",
     theme = bs_theme(
-      bg = "#1E1E1E", fg = "#FFFFFF", primary = "#D4850F",
+      bg = "#0F2035", fg = "#FFFFFF", primary = "#D4850F",
       base_font = font_google("Inter", local = FALSE)
     ),
     
     # Activation de MathJax pour les formules
     header = tags$head(
+      tags$style(HTML("
+        '.nav-link { color: #D4850F !important; font-weight: bold; }',
+        '.nav-link.active { color: #FFFFFF !important; background-color: #D4850F !important; }',
+        '.shiny-input-container label, .control-label, .form-group label { color: #FFFFFF !important; }',
+        'input, select, .form-control { color: #FFFFFF !important; }',
+        '.value-box-value, .value-box-title { color: #FFFFFF !important; }',
+        'p, h1, h2, h3, h4, h5, h6 { color: #FFFFFF !important; }'
+      ")),
       tags$script(src = "https://polyfill.io/v3/polyfill.min.js?features=es6"),
       tags$script(id = "MathJax-script", async = NA, src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js")
     ),
@@ -179,21 +187,6 @@ saga_ui <- function() {
       )
     ),
     
-    nav_panel("Référentiel Pédagogique",
-      card(
-        card_header("Formules & Doctrine"),
-        shiny::markdown("
-### 1. Le paradoxe franco-américain
-*La substitution d'un salaire en inférence transforme des charges taxées (masse salariale) en OpEx purs sans cotisations.*
 
-### 2. La Fiabilité Composée
-$$P_{s} = (p)^N$$
-(Où N est le nombre d'étapes d'une chaîne agentique).
-
-### 3. Le Coût par Tâche Acceptée ($C_{task}$)
-$$C_{task} = \\frac{\\sum (C_{tokens}) + C_{infra} + C_{revue\\_humaine}}{P_{s}}$$
-        ")
-      )
-    )
   )
 }
