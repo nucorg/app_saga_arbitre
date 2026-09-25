@@ -428,16 +428,16 @@ saga_server <- function(input, output, session) {
         check.names = FALSE
       )
       
-      tot_in <- tot_row$`Prompt (In)` + (tot_row$`Cache (In)` * 0.25)
+      tot_in <- tot_row$`Prompt (In)` + (tot_row$`Cache (In)` * input$cache_discount)
       tot_out <- tot_row$Output + tot_row$Thinking
       
       equiv_row <- data.frame(
         `Rôle (Task)` = "ÉQUIVALENT IN/OUT (BATCH)",
         `Modèle` = "",
         Reqs = NA,
-        `Prompt (In)` = tot_in,
+        `Prompt (In)` = round(tot_in, 2),
         `Cache (In)` = NA,
-        Output = tot_out,
+        Output = round(tot_out, 2),
         Thinking = NA,
         check.names = FALSE
       )
@@ -446,9 +446,9 @@ saga_server <- function(input, output, session) {
         `Rôle (Task)` = "ÉQUIVALENT IN/OUT (UNITAIRE)",
         `Modèle` = "Copier vers C1 / CTP ->",
         Reqs = NA,
-        `Prompt (In)` = if (total_vol > 0) tot_in / total_vol else tot_in,
+        `Prompt (In)` = round(if (total_vol > 0) tot_in / total_vol else tot_in, 2),
         `Cache (In)` = NA,
-        Output = if (total_vol > 0) tot_out / total_vol else tot_out,
+        Output = round(if (total_vol > 0) tot_out / total_vol else tot_out, 2),
         Thinking = NA,
         check.names = FALSE
       )

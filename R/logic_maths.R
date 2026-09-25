@@ -78,9 +78,9 @@ compute_c1_eur <- function(cost_usd, usd_eur_rate) {
 
 #' Calcul des jetons équivalents en tenant compte du cache (réduction de 75% sur le prix du cache)
 #' @return list(equiv_in, equiv_out)
-compute_equivalent_tokens <- function(prompt_in, cache_in, output, thinking) {
+compute_equivalent_tokens <- function(prompt_in, cache_in, output, thinking, cache_discount = 0.25) {
   # Les jetons provenant du cache coûtent 25% du prix standard (soit une décote de 75%)
-  equiv_in <- prompt_in + (cache_in * 0.25)
+  equiv_in <- prompt_in + (cache_in * cache_discount)
   equiv_out <- output + thinking
   list(equiv_in = equiv_in, equiv_out = equiv_out)
 }

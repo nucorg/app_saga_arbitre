@@ -60,7 +60,7 @@ test_that("compute_c1_usd et compute_c1_eur calculent l'inférence correctement"
 test_that("compute_equivalent_tokens applique bien l'abattement du cache contextuel", {
   # 100 prompt_in, 100 cache_in -> equiv = 100 + 25 = 125
   # 50 output, 10 thinking -> equiv = 60
-  res <- compute_equivalent_tokens(prompt_in = 100, cache_in = 100, output = 50, thinking = 10)
+  res <- compute_equivalent_tokens(prompt_in = 100, cache_in = 100, output = 50, thinking = 10, cache_discount = 0.25)
   expect_equal(res$equiv_in, 125)
   expect_equal(res$equiv_out, 60)
 })

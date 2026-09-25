@@ -171,6 +171,7 @@ saga_ui <- function() {
           card_header("Import des logs"),
           selectInput("squad_dir", "1. Squad ciblé :", choices = NULL),
           selectInput("month_dir", "2. Période (Mois) :", choices = NULL),
+          numericInput("cache_discount", "Ratio d'abattement Cache (ex: 0.25 pour Gemini) :", value = 0.25, min = 0, max = 1, step = 0.05),
           actionButton("process_logs", "Analyser la Télémétrie mensuelle", class = "btn-primary", width = "100%")
         ),
         card(
