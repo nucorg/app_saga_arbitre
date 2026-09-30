@@ -124,7 +124,7 @@ saga_ui <- function() {
       )
     ),
 
-    nav_panel("C1 - Test Inférence",
+    nav_panel("C1 - Inférence",
       layout_sidebar(
         sidebar = sidebar(
           title = "Paramètres de la Tâche",
@@ -148,7 +148,7 @@ saga_ui <- function() {
       )
     ),
 
-    nav_panel("C2 - Test Infra",
+    nav_panel("C2 - Infra",
       layout_sidebar(
         sidebar = sidebar(
           title = "Paramètres d'Infrastructure",
@@ -180,7 +180,7 @@ saga_ui <- function() {
       )
     ),
 
-    nav_panel("C3 - Test Humain",
+    nav_panel("C3 - Humain",
       layout_sidebar(
         sidebar = sidebar(
           title = "Inducteurs Humains (C3)",
