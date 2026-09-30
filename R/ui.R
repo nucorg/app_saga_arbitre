@@ -246,33 +246,6 @@ saga_ui <- function() {
       )
     ),
     
-    nav_panel("Cas M1 — Deux visions",
-      layout_sidebar(
-        sidebar = sidebar(
-          selectInput("case_preset", "Cas simulé :", c("Grands Groupes / ETI" = "enterprise", "Firme minimale Qognito" = "qognito")),
-          numericInput("case_volume", "Documents entrants / mois", 1200, min = 0),
-          numericInput("case_accepted", "Résultats finalement acceptés / mois", 1200, min = 0),
-          numericInput("case_manual", "Traitement manuel (min/document)", 30, min = 0),
-          numericInput("case_review", "Revue systématique (min/document)", 5, min = 0),
-          numericInput("case_rework", "Part nécessitant une reprise (0–1)", 0.2, min = 0, max = 1),
-          numericInput("case_rework_min", "Reprise additionnelle (min)", 15, min = 0),
-          numericInput("case_governance", "Gouvernance et entretien (h/mois)", 40, min = 0),
-          numericInput("case_hourly", "Coût humain conventionnel (EUR/h)", 60, min = 0),
-          numericInput("case_api", "Inférence, toutes tentatives (EUR/document entrant)", 0.5, min = 0),
-          numericInput("case_infra", "C2 récurrent incrémental (EUR/mois)", 2400, min = 0),
-          numericInput("case_investment", "Investissement initial (EUR)", 36000, min = 0),
-          numericInput("case_amort", "Répartition analytique (mois)", 24, min = 1),
-          numericInput("case_alpha", "Part réaffectable du temps net (0–1)", 0.5, min = 0, max = 1),
-          numericInput("case_value", "Valeur conventionnelle réaffectée (EUR/h)", 60, min = 0),
-          numericInput("case_calibration", "Durée du calibrage (mois)", 3, min = 0),
-          numericInput("case_h1", "Effort humain TOTAL en calibrage (h/mois)", 300, min = 0),
-          numericInput("case_horizon", "Horizon (mois)", 12, min = 1)
-        ),
-        card(card_header("Simulation de référence H4E"),
-             p("Les préréglages sont des hypothèses, pas des mesures de terrain. Le solde valorise une capacité et ne constitue pas une économie de trésorerie."),
-             tableOutput("case_results"), textOutput("case_coverage"))
-      )
-    ),
     nav_panel("Prix API",
       layout_columns(
         col_widths = 12,
@@ -287,35 +260,6 @@ saga_ui <- function() {
           ),
           hr(),
           DTOutput("table_pricing_edit")
-        )
-      )
-    ),
-    nav_panel("Télémétrie du Terrain",
-      layout_columns(
-        col_widths = c(4, 8),
-        card(
-          card_header("Import des logs"),
-          selectInput("squad_dir", "1. Squad ciblé :", choices = NULL),
-          selectInput("month_dir", "2. Période (Mois) :", choices = NULL),
-          numericInput("cache_discount", "Hypothèse : part du prix entrée pour le cache :", value = 0.25, min = 0, max = 1, step = 0.05),
-          numericInput("telemetry_fx", "Conversion USD vers EUR :", value = 0.88, min = 0.001),
-          checkboxInput("telemetry_prompt_cache", "Prompt inclut déjà les jetons cache", value = FALSE),
-          checkboxInput("telemetry_output_thinking", "Output inclut déjà Thinking", value = FALSE),
-          checkboxInput("telemetry_confirm", "Période commune, résultats finaux uniques et coûts humains/infra complets confirmés", value = FALSE),
-          p("C2 et heures humaines proviennent de Manuel vs Agentique. Tarifs locaux historiques : estimation, pas facture vérifiée."),
-          actionButton("process_logs", "Analyser la Télémétrie mensuelle", class = "btn-primary", width = "100%")
-        ),
-        card(
-          card_header("Résultats et coût reconstitué"),
-          layout_columns(
-            value_box("Volume Réel", uiOutput("real_vol"), theme = "primary"),
-            value_box("Succès Réel", uiOutput("real_ps"), theme = "primary"),
-            value_box("Coût estimé / accepté", uiOutput("real_ctask"), theme = "primary"),
-            value_box("Décomposition", uiOutput("real_breakdown"), theme = "secondary")
-          ),
-          textOutput("telemetry_status"),
-          h4("Données brutes de facturation"),
-          DTOutput("table_billing")
         )
       )
     )

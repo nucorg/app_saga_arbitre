@@ -10,7 +10,6 @@ library(markdown)
 # but to be completely safe in all loading contexts (like renv/rsconnect), we can source them:
 source("R/logic_maths.R")
 source("R/logic_parsers.R")
-source("R/logic_audit.R")
 source("R/ui.R")
 source("R/server.R")
 

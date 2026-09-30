@@ -5,6 +5,6 @@ account: qognito
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 18052078
-bundleId: 12627615
+bundleId: 12628277
 url: https://qognito.shinyapps.io/app_saga_arbitre/
 version: 1

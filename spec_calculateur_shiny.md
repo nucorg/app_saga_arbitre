@@ -1,3 +1,5 @@
+> **Séparation du 30 septembre 2026.** Ce document décrit la conception historique, pas le périmètre public actuel. Les pages Cas M1 et Télémétrie ainsi que les parseurs H4E sont désormais conservés uniquement dans `../app_saga_terrain/`. Le README et les tests de chaque dépôt font foi.
+
 > **Spécification historique, amendée le 27 septembre 2026.** Pour le comportement actif, le [README](README.md), les fonctions et tests font foi. Les affirmations de taux universel, coût local nul ou rentabilité garantie de cette version initiale sont retirées par la révision H4E. Le nouveau panneau Cas M1 rend explicites coût humain complet, investissement, couverture finale et valeur réaffectée. Les formats historiques restent pris en charge avec réserves signalées ; les tarifs ne sont pas certifiés actuels.
 
 # 📋 Spécifications pour l'Agent Plombier-R (Calculateur IA / Shiny : SAGA Arbitre)
