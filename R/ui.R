@@ -89,6 +89,11 @@ saga_ui <- function() {
           background-color: #0F2035 !important; 
           border: 1px solid #D4850F !important;
         }
+        #pricing-import-control .btn-file {
+          color: #FFFFFF;
+          background-color: #495057;
+          border-color: #6c757d;
+        }
         .value-box-value, .value-box-title { color: #FFFFFF !important; }
         p, h1, h2, h3, h4, h5, h6 { color: #FFFFFF !important; }
       ")),
@@ -248,15 +253,34 @@ saga_ui <- function() {
       layout_columns(
         col_widths = 12,
         card(
-          card_header("Gestion des Prix API (Catalogue Local)"),
-          p("Sélectionnez une ligne pour la supprimer. Modifiez directement les cellules. Cliquez sur Sauvegarder pour écrire dans le CSV."),
+          card_header("Mes tarifs pour cette simulation"),
+          p("Vos modifications concernent uniquement votre session. Exportez vos tarifs pour les conserver."),
+          p("Double-cliquez sur une cellule pour la modifier, puis cliquez sur « Appliquer à ma simulation » pour utiliser ces tarifs dans C1. Prix en USD par million de jetons ; dates au format AAAA-MM-JJ."),
           layout_columns(
-            col_widths = c(4, 4, 4),
-            actionButton("add_row", "Ajouter un Modèle", icon = icon("plus")),
+            col_widths = c(4, 4, 4), fill = FALSE, fillable = FALSE,
+            actionButton("add_row", "Ajouter un Modèle", icon = icon("plus"), class = "btn-secondary"),
             actionButton("delete_row", "Supprimer la sélection", icon = icon("trash"), class = "btn-warning"),
-            actionButton("save_pricing", "Sauvegarder dans le CSV", class = "btn-primary", icon = icon("save"))
+            actionButton("apply_pricing", "Appliquer à ma simulation", class = "btn-primary", icon = icon("check"))
           ),
           hr(),
+          layout_columns(
+            col_widths = c(4, 4, 4), fill = FALSE, fillable = FALSE,
+            div(
+              fileInput("import_pricing", "Importer mes tarifs", accept = c(".csv", "text/csv"),
+                        buttonLabel = "Parcourir…", placeholder = "Aucun fichier sélectionné"),
+              id = "pricing-import-control"
+            ),
+            downloadButton("export_pricing", "Exporter mes tarifs", class = "btn-secondary"),
+            actionButton("reset_pricing", "Rétablir les tarifs de référence", icon = icon("rotate-left"), class = "btn-secondary")
+          ),
+          tags$details(
+            tags$summary("Import, export et format des fichiers CSV"),
+            p("L’import remplace la table affichée et attend votre application. L’export conserve cette table, y compris les modifications non appliquées. Le rétablissement remet immédiatement la table et les calculs aux tarifs de référence."),
+            p("CSV UTF-8 : séparateur virgule ou point-virgule. Identifiant, p_in_1M et p_out_1M sont requis ; Fournisseur, p_cache_1M et date_verification sont facultatifs. Un tarif cache ou une date inconnus peuvent rester vides.")
+          ),
+          hr(),
+          div(textOutput("pricing_status"), role = "status", `aria-live` = "polite"),
+          div(textOutput("pricing_error"), class = "text-danger", role = "alert"),
           DTOutput("table_pricing_edit")
         )
       )

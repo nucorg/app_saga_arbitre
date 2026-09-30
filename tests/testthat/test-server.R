@@ -57,50 +57,108 @@ test_that("L'ajout et la suppression de modèles fonctionnent dans l'onglet Prix
   }))
 })
 
-test_that("Propagation des modifications de prix vers l'onglet C1", {
-  # Création d'un bac à sable pour ne pas écraser le vrai CSV pendant le test
-  folder <- tempfile("saga-test-c1-")
-  dir.create(folder)
-  on.exit(unlink(folder, recursive = TRUE), add = TRUE)
-  
-  dir.create(file.path(folder, "data"))
-  df_init <- data.frame(
-    Identifiant = "Modele Initial",
-    Fournisseur = "Test",
-    p_in_1M = 1.0,
-    p_out_1M = 2.0,
-    p_cache_1M = NA,
-    date_verification = as.Date("2026-09-27"),
-    stringsAsFactors = FALSE
-  )
-  write.csv(df_init, file.path(folder, "data/pricing_models.csv"), row.names = FALSE, quote = FALSE, na = "")
-  
-  withr::with_dir(folder, shiny::testServer(saga_server, {
-    # 1. Vérification de l'état initial
-    expect_equal(pricing_data()$Identifiant, "Modele Initial")
-    
-    # 2. Ajout d'une ligne via l'UI Prix API
-    session$setInputs(add_row = 1)
-    
-    # 3. Modification des cellules (info$row est 1-indexé, info$col est 0-indexé)
-    # Changement du nom du modèle
-    session$setInputs(table_pricing_edit_cell_edit = list(row = 2, col = 0, value = "Nouveau Super Modele"))
-    # Changement du prix d'entrée (col 2 = 3ème colonne = p_in_1M)
-    session$setInputs(table_pricing_edit_cell_edit = list(row = 2, col = 2, value = 3.14))
-    
-    # 4. Sauvegarde dans le CSV
-    session$setInputs(save_pricing = 1)
-    
-    # 5. Vérifier que la propagation a bien mis à jour le reactive global `pricing_data()`
-    # Ce reactive est celui qui alimente les calculs et sélecteurs de l'onglet C1
-    updated_data <- pricing_data()
-    expect_true("Nouveau Super Modele" %in% updated_data$Identifiant)
-    expect_equal(updated_data$p_in_1M[updated_data$Identifiant == "Nouveau Super Modele"], 3.14)
-    
-    # Le tableau rendu de C1 (`output$table_c1_pricing`) est un widget htmlwidgets DT,
-    # sa représentation as.character() contient les options JSON mais pas toujours 
-    # les données elles-mêmes à cause du mode server-side par défaut ou du lazy-loading.
-    # La vérification de `updated_data` ci-dessus prouve formellement que la source
-    # réactive a bien propagé le changement.
+test_that("appliquer et rétablir les tarifs ne modifient jamais le CSV de référence", {
+  withr::with_dir("../..", {
+    before <- readBin("data/pricing_models.csv", "raw", n = file.info("data/pricing_models.csv")$size)
+    shiny::testServer(saga_server, {
+      reference <- pricing_data()
+      session$setInputs(table_pricing_edit_cell_edit = list(row = 1, col = 2, value = "3,14"))
+      expect_equal(rv_pricing_edit()$p_in_1M[1], 3.14)
+      expect_equal(pricing_data(), reference)
+      expect_match(output$pricing_status, "à appliquer")
+      session$setInputs(apply_pricing = 1)
+      expect_equal(pricing_data()$p_in_1M[1], 3.14)
+      expect_match(output$pricing_status, "personnels")
+      session$setInputs(reset_pricing = 1)
+      expect_equal(rv_pricing_edit(), reference)
+      expect_equal(pricing_data(), reference)
+      expect_match(output$pricing_status, "référence")
+      session$setInputs(add_row = 1)
+      session$setInputs(add_row = 2)
+      expect_equal(anyDuplicated(rv_pricing_edit()$Identifiant), 0)
+    })
+    expect_equal(readBin("data/pricing_models.csv", "raw", n = file.info("data/pricing_models.csv")$size), before)
+  })
+})
+
+test_that("l'import prépare le brouillon et refuse un fichier invalide sans perdre les tarifs", {
+  path <- tempfile(fileext = ".csv"); on.exit(unlink(path))
+  personal <- data.frame(Identifiant = 'Personnel, "éco"', p_in_1M = 1.23, p_out_1M = 4.56)
+  export_api_pricing(personal, path)
+  withr::with_dir("../..", shiny::testServer(saga_server, {
+    reference <- pricing_data()
+    session$setInputs(import_pricing = list(name = "tarifs.csv", datapath = path))
+    expect_equal(rv_pricing_edit()$Identifiant, personal$Identifiant)
+    expect_equal(pricing_data(), reference)
+    # Le handler réel du téléchargement exporte le brouillon, même non appliqué.
+    download <- output$export_pricing
+    expect_equal(import_api_pricing(download), validate_api_pricing(personal))
+    session$setInputs(apply_pricing = 1)
+    expect_equal(pricing_data(), validate_api_pricing(personal))
+    writeLines(c("Identifiant,p_in_1M,p_out_1M", "Invalide,-1,2"), path)
+    session$setInputs(import_pricing = list(name = "invalide.csv", datapath = path))
+    expect_match(pricing_error(), "prix numérique")
+    expect_equal(rv_pricing_edit(), validate_api_pricing(personal))
+    expect_equal(pricing_data(), validate_api_pricing(personal))
+    session$setInputs(reset_pricing = 1)
+    expect_equal(pricing_data(), reference)
+    expect_equal(pricing_error(), "")
   }))
+})
+
+test_that("une édition invalide et la suppression du dernier modèle laissent la table intacte", {
+  withr::with_dir("../..", shiny::testServer(saga_server, {
+    reference <- rv_pricing_edit()
+    session$setInputs(table_pricing_edit_cell_edit = list(row = 1, col = 2, value = "abc"))
+    expect_match(pricing_error(), "prix numérique")
+    expect_equal(rv_pricing_edit(), reference)
+    session$setInputs(table_pricing_edit_cell_edit = list(row = 1, col = 5, value = "2026-02-30"))
+    expect_match(pricing_error(), "Date invalide")
+    expect_equal(rv_pricing_edit(), reference)
+    session$setInputs(table_pricing_edit_cell_edit = list(row = 1, col = 0, value = reference$Identifiant[2]))
+    expect_match(pricing_error(), "uniques")
+    expect_equal(rv_pricing_edit(), reference)
+    rv_pricing_edit(reference[1, , drop = FALSE])
+    session$setInputs(table_pricing_edit_rows_selected = 1, delete_row = 1)
+    expect_match(pricing_error(), "au moins un")
+    expect_equal(nrow(rv_pricing_edit()), 1)
+    expect_equal(pricing_data(), reference)
+  }))
+})
+
+test_that("deux sessions simultanées ont des catalogues indépendants", {
+  withr::with_dir("../..", {
+    # testServer ne peut pas être imbriqué : garder deux domaines réactifs vivants.
+    start_session <- function() {
+      session <- shiny::MockShinySession$new()
+      state <- new.env(parent = environment(saga_server))
+      state$input <- session$input
+      state$output <- session$output
+      state$session <- session
+      shiny::withReactiveDomain(session, eval(body(saga_server), envir = state))
+      session$flushReact()
+      list(session = session, state = state)
+    }
+    first <- start_session(); second <- start_session()
+    on.exit(first$session$close(), add = TRUE)
+    on.exit(second$session$close(), add = TRUE)
+    reference_hash <- tools::md5sum("data/pricing_models.csv")
+    reference <- shiny::isolate(first$state$pricing_data())
+    first$session$setInputs(table_pricing_edit_cell_edit = list(row = 1, col = 2, value = "123.45"))
+    first$session$setInputs(apply_pricing = 1)
+    expect_equal(shiny::isolate(first$state$pricing_data())$p_in_1M[1], 123.45)
+    expect_equal(shiny::isolate(second$state$pricing_data()), reference)
+    expect_equal(shiny::isolate(second$state$rv_pricing_edit()), reference)
+    second$session$setInputs(table_pricing_edit_cell_edit = list(row = 1, col = 2, value = "678.9"))
+    second$session$setInputs(apply_pricing = 1)
+    expect_equal(shiny::isolate(second$state$pricing_data())$p_in_1M[1], 678.9)
+    expect_equal(shiny::isolate(first$state$pricing_data())$p_in_1M[1], 123.45)
+    second$session$setInputs(reset_pricing = 1)
+    expect_equal(shiny::isolate(second$state$pricing_data()), reference)
+    expect_equal(shiny::isolate(first$state$rv_pricing_edit())$p_in_1M[1], 123.45)
+    shiny::testServer(saga_server, {
+      expect_equal(pricing_data(), validate_api_pricing(read_api_pricing()))
+    })
+    expect_identical(tools::md5sum("data/pricing_models.csv"), reference_hash)
+  })
 })

@@ -97,86 +97,128 @@ saga_server <- function(input, output, session) {
   
   # -- Onglet C1 --
   
-  rv_pricing_trigger <- reactiveVal(0)
-  
-  pricing_data <- reactive({
-    rv_pricing_trigger() # dependency
-    read_api_pricing("data/pricing_models.csv")
-  })
-  
-  # -- Onglet Prix API --
-  rv_pricing_edit <- reactiveVal(isolate(read_api_pricing("data/pricing_models.csv")))
-  
+  # Chaque appel du serveur possède sa référence, ses tarifs actifs et son brouillon.
+  reference_pricing <- validate_api_pricing(read_api_pricing("data/pricing_models.csv"))
+  pricing_data <- reactiveVal(reference_pricing)
+  rv_pricing_edit <- reactiveVal(reference_pricing)
+  pricing_error <- reactiveVal("")
+
+  # -- Onglet Prix API : aucune écriture dans le catalogue partagé --
   output$table_pricing_edit <- renderDT({
     datatable(
       isolate(rv_pricing_edit()),
-      editable = TRUE,
-      rownames = FALSE,
-      selection = "single",
+      editable = TRUE, rownames = FALSE, selection = "single",
       options = list(pageLength = 100, dom = "tip", scrollX = TRUE)
     )
   })
-  
   proxy_pricing_edit <- dataTableProxy("table_pricing_edit")
-  
-  observeEvent(input$add_row, {
-    df <- rv_pricing_edit()
-    new_row <- data.frame(
-      Identifiant = "Nouveau Modèle",
-      Fournisseur = "",
-      p_in_1M = 0,
-      p_out_1M = 0,
-      p_cache_1M = NA_real_,
-      date_verification = Sys.Date(),
-      stringsAsFactors = FALSE
-    )
-    # Remplir avec des NAs pour correspondre au dataframe
-    for (col in names(df)) {
-      if (!col %in% names(new_row)) new_row[[col]] <- NA
-    }
-    new_row <- new_row[, names(df), drop = FALSE]
-    
-    # Insérer en HAUT (ligne 1) pour qu'il soit immédiatement visible
-    new_df <- rbind(new_row, df)
-    rv_pricing_edit(new_df)
-    replaceData(proxy_pricing_edit, new_df, resetPaging = FALSE, rownames = FALSE)
+  refresh_pricing_table <- function() {
+    replaceData(proxy_pricing_edit, rv_pricing_edit(), resetPaging = FALSE, rownames = FALSE)
+  }
+  pricing_action <- function(action) {
+    tryCatch({
+      action()
+      pricing_error("")
+    }, error = function(e) {
+      pricing_error(conditionMessage(e))
+      showNotification(conditionMessage(e), type = "error", id = "pricing-feedback")
+      refresh_pricing_table()
+    })
+  }
+  set_pricing_draft <- function(df) {
+    rv_pricing_edit(validate_api_pricing(df))
+    refresh_pricing_table()
+  }
+  output$pricing_error <- renderText(pricing_error())
+  output$pricing_status <- renderText({
+    if (!identical(rv_pricing_edit(), pricing_data()))
+      "Modifications à appliquer : les calculs utilisent encore les tarifs précédemment appliqués."
+    else if (identical(pricing_data(), reference_pricing))
+      "Tarifs de référence actifs dans votre simulation."
+    else
+      "Vos tarifs personnels sont actifs dans votre simulation."
   })
-  
+
+  observeEvent(input$add_row, {
+    pricing_action(function() {
+      df <- rv_pricing_edit()
+      name <- "Nouveau Modèle"
+      suffix <- 2L
+      while (tolower(name) %in% tolower(df$Identifiant)) {
+        name <- paste("Nouveau Modèle", suffix)
+        suffix <- suffix + 1L
+      }
+      new_row <- data.frame(Identifiant = name, Fournisseur = "",
+        p_in_1M = 0, p_out_1M = 0, p_cache_1M = NA_real_,
+        date_verification = as.Date(NA))
+      set_pricing_draft(rbind(new_row, df))
+    })
+  })
   observeEvent(input$delete_row, {
     selected <- input$table_pricing_edit_rows_selected
-    if (length(selected) > 0) {
-      df <- rv_pricing_edit()
-      new_df <- df[-selected, , drop = FALSE]
-      rv_pricing_edit(new_df)
-      replaceData(proxy_pricing_edit, new_df, resetPaging = FALSE, rownames = FALSE)
-    } else {
+    if (!length(selected)) {
       showNotification("Veuillez sélectionner une ligne à supprimer.", type = "warning")
+      return()
     }
+    pricing_action(function() {
+      df <- rv_pricing_edit()
+      selected <- intersect(selected, seq_len(nrow(df)))
+      if (length(selected)) set_pricing_draft(df[-selected, , drop = FALSE])
+    })
   })
-  
   observeEvent(input$table_pricing_edit_cell_edit, {
-    info <- input$table_pricing_edit_cell_edit
-    edit_data <- rv_pricing_edit()
-    edit_data[info$row, info$col + 1] <- DT::coerceValue(info$value, edit_data[info$row, info$col + 1])
-    rv_pricing_edit(edit_data)
-    replaceData(proxy_pricing_edit, edit_data, resetPaging = FALSE, rownames = FALSE)
+    pricing_action(function() {
+      info <- input$table_pricing_edit_cell_edit
+      df <- rv_pricing_edit()
+      row <- info$row
+      column <- info$col + 1L
+      if (length(row) != 1L || length(column) != 1L || is.na(row) || is.na(column) ||
+          !row %in% seq_len(nrow(df)) || !column %in% seq_len(ncol(df)))
+        stop("Modification de cellule invalide.", call. = FALSE)
+      # Garder la valeur saisie jusqu'à validation, sans transformer une erreur en NA.
+      df[[column]] <- as.character(df[[column]])
+      df[row, column] <- info$value
+      set_pricing_draft(df)
+    })
   })
-  
-  observeEvent(input$save_pricing, {
-    save_api_pricing(rv_pricing_edit(), "data/pricing_models.csv")
-    rv_pricing_trigger(rv_pricing_trigger() + 1)
-    showNotification("Fichier CSV Prix API mis à jour avec succès !", type = "message")
+  observeEvent(input$apply_pricing, {
+    pricing_action(function() {
+      pricing_data(validate_api_pricing(rv_pricing_edit()))
+      showNotification("Tarifs appliqués à votre simulation uniquement.", type = "message", id = "pricing-feedback")
+    })
   })
-  
+  observeEvent(input$import_pricing, {
+    req(input$import_pricing$datapath)
+    pricing_action(function() {
+      set_pricing_draft(import_api_pricing(input$import_pricing$datapath))
+      showNotification("Tarifs importés. Cliquez sur « Appliquer à ma simulation » pour les utiliser.",
+                       type = "message", duration = 8, id = "pricing-feedback")
+    })
+  })
+  observeEvent(input$reset_pricing, {
+    pricing_action(function() {
+      set_pricing_draft(reference_pricing)
+      pricing_data(reference_pricing)
+      showNotification("Tarifs de référence rétablis dans la table et la simulation.", type = "message", id = "pricing-feedback")
+    })
+  })
+  output$export_pricing <- downloadHandler(
+    filename = function() paste0("saga-tarifs-", Sys.Date(), ".csv"),
+    content = function(file) export_api_pricing(isolate(rv_pricing_edit()), file),
+    contentType = "text/csv; charset=UTF-8"
+  )
+
   observe({
     models <- sort(pricing_data()$Identifiant)
-    if (length(models) > 0) {
-      updateSelectInput(session, "c1_mod_a", choices = models, selected = models[1])
-      updateSelectInput(session, "c1_mod_b", choices = models, selected = models[min(2, length(models))])
-      updateSelectInput(session, "c1_mod_c", choices = models, selected = models[min(3, length(models))])
+    ids <- c("c1_mod_a", "c1_mod_b", "c1_mod_c")
+    for (i in seq_along(ids)) {
+      selected <- isolate(input[[ids[i]]])
+      if (length(selected) != 1L || !selected %in% models)
+        selected <- models[min(i, length(models))]
+      updateSelectInput(session, ids[i], choices = models, selected = selected)
     }
   })
-  
+
   output$table_c1_pricing <- renderDT({
     df <- pricing_data()
     req(input$c1_usd_eur)

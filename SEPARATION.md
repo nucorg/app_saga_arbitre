@@ -9,7 +9,7 @@
 
 Les journaux restent exclus de Git. Déposer les nouveaux journaux dans `../app_saga_terrain/telemetry/<squad>/<periode>/` et sauvegarder ce dossier après import. Aucun producteur externe visant l’ancien chemin n’a été trouvé dans les scripts INFRA et AGENTIC examinés.
 
-Les tarifs locaux font foi. Les modifications futures des tarifs sont indépendantes dans chaque application. Sur shinyapps.io, les écritures dans le système de fichiers de l’instance restent temporaires et peuvent disparaître au redéploiement ou au remplacement d’une instance.
+Évolution de Prix API après la séparation : dans `app_saga_arbitre`, le catalogue livré fait désormais référence en lecture seule. Les visiteurs disposent de tarifs personnels par session, avec application à C1, import, export et réinitialisation. Voir le README pour leur conservation par export CSV. La copie locale `app_saga_terrain` conserve son fonctionnement initial indépendant.
 
 ## Sauvegardes vérifiées
 
