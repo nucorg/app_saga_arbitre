@@ -1,95 +1,50 @@
-# ⚖️ SAGA Arbitre - Simulateur FinOps IA Agentique
+# SAGA Arbitre — Simulations de coûts et diagnostic H4E
 
-**SAGA Arbitre** est une application web interactive propulsée par R/Shiny. Elle est conçue pour les architectes IA et les directions financières souhaitant évaluer avec une précision chirurgicale le **Coût Total de Possession (CTP)** et le **Retour sur Investissement (ROI)** d'une architecture agentique autonome face à un traitement humain traditionnel.
+Application R/Shiny. Les résultats dépendent de données et conventions explicites ; ils ne certifient ni rentabilité réelle, ni qualité opérationnelle, ni conformité d’un service.
 
-Cette application matérialise les standards empiriques FinOps, dissociant les coûts en trois dimensions fondamentales (Inférence, Infrastructure, et Humain) pour éliminer les illusions financières souvent liées aux déploiements LLM.
+## Parcours
 
----
+- **Manuel vs Agentique** : coût par résultat accepté et coûts cumulés à couverture finale équivalente. Le volume est entrant ; le taux doit être l’acceptation finale. Les coûts d’inférence par entrée comprennent déjà les reprises. La courbe manuelle compare le nombre de résultats finalement acceptés ; elle ne prouve pas la couverture des autres entrées. Investissements initiaux séparés, référence manuelle sans nouveau coût de construction par défaut.
+- **C1** : simulation au catalogue local et conversion USD/EUR explicite.
+- **C2** : frais non humains fixes et variables. Fixe/variable ne signifie pas CAPEX/OPEX. Les prix sont des hypothèses locales à vérifier.
+- **C3** : revue systématique, reprises additionnelles et gouvernance/entretien. Le forfait de calibrage représente tout l’effort de cette phase ; trois mois est l’hypothèse du microscope historique.
+- **CTP** : total sur l’horizon. Les transferts C1/C2/C3 restent manuels et doivent conserver volume, devise et période. Si C2 est déjà détaillé, la case correspondante impose κ=1 et évite une seconde multiplication.
+- **Cas M1 — Deux visions** : calcul commun Firme Minimale et Grands Groupes/ETI ; investissement initial, durée de calibrage et taux de réaffectation explicites. Distingue coût analytique réparti et coût sur horizon avec investissement payé une seule fois. Le solde est une valeur de capacité, pas de trésorerie.
+- **Télémétrie** : lecture des journaux, prix par identifiant exact et coût estimé par accepté final. Une donnée manquante ou un tarif inconnu bloque le calcul ; zéro accepté donne un coût non fini.
 
-## ✨ Fonctionnalités Principales
+## Deux cas de référence (simulations)
 
-Le simulateur adopte une approche ascendante ("Bottom-Up") répartie sur plusieurs modules de diagnostic :
+| Cas | Humain résiduel/mois | CTP analytique/mois | Solde conventionnel/mois |
+|---|---:|---:|---:|
+| Entreprise : 1 200 entrants et acceptés | 200 h | 16 500 EUR | 7 500 EUR |
+| Qognito : 150 entrants et acceptés | 20,25 h | 529,25 EUR | 466,375 EUR |
 
-- **📊 Télémétrie du Terrain** : Ingestion dynamique de fichiers journaux (logs métier) de squads d'agents en production. Calcule l'équivalence financière des jetons (*Prompt, Cache contextuel, Output*) et déduit un coût moyen par tâche réelle.
-- **🧠 1. Microscope Inférence (C1)** : Simulateur API inter-fournisseurs (Google, Anthropic, OpenAI). Intègre la conversion dynamique USD/EUR et la comparaison par scénarios selon les tailles de contexte.
-- **🏗️ 2. Microscope Infrastructure (C2)** : Conception à la carte du "corps" de l'agent. Différenciation stricte entre le CAPEX (coûts fixes mensuels : hébergement, Vector DB) et l'OPEX (coûts variables : APIs de recherche, Observabilité LLMOps, parsers).
-- **🙋 3. Microscope Humain (C3)** : Modélisation asymétrique du *Human-in-the-Loop*. Met en évidence le coût lourd de la "Phase de Calibrage" (Mois 1 à 3) face au régime résiduel de la "Phase de Croisière" (Escalade métier).
-- **🎯 4. Diagnostic d'Investissement (CTP)** : L'agrégateur macroscopique top-down. Projette la somme temporelle des modules dans des graphiques croisés pour identifier avec exactitude le "Genou de rentabilité" (Point Mort) face au process manuel historique.
+Qognito : les 3,75 h historiques sont les seules reprises. Le scénario ajoute 12,5 h de revue et 4 h de gouvernance, suppose 0,05 EUR d’inférence par entrée, 218 EUR/mois incrémentaux et un investissement initial nul **à remplacer par sa mesure**. Ni 15 EUR/h ni C2=0 ne sont imposés aux firmes minimales. Les deux taux de valorisation (coût consommé et valeur réaffectée) sont distincts.
 
----
+Entreprise : investissement 36 000 EUR réparti sur 24 mois ; coût récurrent non humain 3 000 EUR/mois ; trois mois à 300 h puis neuf à 200 h. Le solde conventionnel de première année est 63 000 EUR. L’amortissement n’est pas ajouté à l’investissement payé.
 
-## 🚀 Installation & Lancement
+## Contrat des journaux
 
-Le socle logiciel repose sur le langage **R** et bénéficie d'une gestion stricte de ses dépendances via le moteur `renv`.
+Répertoire `telemetry/<squad>/<periode>/`. Facturation : `cout_carbone_*.md` ; conformité : `*_squad_*.md`.
 
-### Prérequis
-- R (version >= 4.1.0)
-- Le package `renv` installé globalement.
+La première table de facturation porte huit colonnes dans cet ordre : rôle, PID, modèle, requêtes, Prompt (In), Cache (In), Output, Thinking. Espaces numériques et virgules décimales sont acceptés. Les lignes TOTAL sont exclues du calcul. Une table malformée invalide l’import.
 
-### Initialisation de l'environnement
+La conformité doit donner `Total de Livrables jugés : N` et de préférence `Résultats acceptés : A`. L’ancien champ `Fiabilité Composée (Ps) : 95,5 %` reste lisible : il estime A à partir du taux, potentiellement arrondi, et exige confirmation qu’il s’agit bien du taux **final**, pas du premier passage. Les comptes explicites ont priorité.
 
-1. Clonez le dépôt et naviguez dans le dossier du projet :
-   ```bash
-   cd /chemin/vers/app_saga_arbitre
-   ```
+Avant calcul, confirmer que journaux et coûts couvrent la même période, sans doublons ni populations superposées. Les journaux identiques sont refusés ; les formats historiques sans identifiants unitaires ne permettent pas de détecter tous les chevauchements. C2 et heures humaines proviennent du premier onglet et doivent représenter la période importée. Les champs de compteurs doivent préciser si cache et Thinking sont déjà inclus dans leurs totaux, via les deux cases dédiées.
 
-2. Restaurez les bibliothèques figées :
-   ```R
-   # Depuis la console R
-   renv::restore()
-   ```
+L’identifiant du modèle est rapproché du catalogue après normalisation typographique, sans deviner un prix à partir de « pro » ou « flash ». Les tarifs historiques conservés sont marqués `historique_non_verifie` ; ils ne constituent pas une recommandation actuelle. `p_cache_1M` permet un tarif cache explicite ; sinon le ratio saisi est une hypothèse de simulation. Les frais de création/stockage éventuels sont à intégrer séparément aux coûts de période. Vérifier les compteurs, devises et factures avant décision réelle.
 
-3. Lancez l'application Shiny :
-   ```R
-   shiny::runApp()
-   ```
+## Exécution et tests
 
----
+Restaurer l’environnement déclaré par `renv.lock`, puis lancer `shiny::runApp()`. `app.R` charge explicitement les noyaux `logic_maths.R`, `logic_parsers.R` et `logic_audit.R`.
 
-## 📂 Architecture du Projet
-
-```text
-app_saga_arbitre/
-├── app.R                  # Point d'entrée de l'application (charge l'UI et Server)
-├── R/
-│   ├── ui.R               # Définition de l'interface utilisateur (Shiny layout)
-│   ├── server.R           # Cœur réactif et logique de calculs FinOps
-│   ├── logic_maths.R      # Fonctions mathématiques pures (indépendantes du UI)
-│   └── logic_parsers.R    # Parseurs syntaxiques des fichiers de Télémétrie Markdown
-├── data/                  # Fichiers sources (catalogues d'inputs non-code)
-│   ├── pricing_models.csv # Tarification des modèles LLM (USD)
-│   └── pricing_infra.csv  # Tarification des briques cloud/LLMOps C2 (USD)
-├── telemetry/             # Répertoires de données dynamiques injectées par les agents locaux
-│   └── [nom_du_squad]/
-│       └── [mois_annee]/
-└── tests/
-    └── testthat/          # Suite stricte de tests de non-régression mathématique et parsing
+```r
+testthat::test_dir("tests/testthat")
 ```
 
----
+Les tests couvrent les deux cas, les sensibilités, le micro-cas des dates, les formats historiques, les tarifs inconnus, les données absentes, le cache, la conversion et les réactifs Shiny. Les tests d’intégration exigent les dépendances réelles et ne sont pas ignorés silencieusement.
 
-## 💡 Workflow d'Ingénierie & "Règle d'Or FinOps"
+Pour l’audit du 27 septembre 2026, les dépendances absentes ont été installées dans `/tmp/saga-r-lib` sans modifier la bibliothèque personnelle ni `renv.lock`. Commande de reproduction dans cet environnement temporaire : `R_LIBS=/tmp/saga-r-lib Rscript --vanilla -e 'testthat::test_dir("tests/testthat")'`. Une autre machine doit restaurer les dépendances du projet.
 
-Pour utiliser SAGA Arbitre de manière optimale, il est recommandé de suivre le flux d'analyse séquentiel :
-
-1. Entrez vos propres volumes physiques dans les **Onglets C1, C2, et C3**.
-2. Copiez manuellement les synthèses produites (Coût C1 par tâche, Coût Total Mensuel C2, et Heures $h_1$/$h_2$ C3).
-3. Collez ces données dans les paramètres de la barre latérale du module final **Diagnostic CTP**.
-
-> **⚠️ Avertissement de Complexité ($\kappa$)** : 
-> L'onglet macroscopique CTP dispose d'un multiplicateur budgétaire théorique "$\kappa$". Si vous y injectez vos totaux financiers ultra-précis issus du microscope C2 (qui contiennent déjà le cumul détaillé de votre architecture multi-agents), **vous devez impérativement sécuriser le curseur sur "Agent Simple ($\kappa = 1$)"**. Dans le cas contraire, vous appliquerez un double-effet multiplicateur biaisant drastiquement le tracé de votre ROI.
-
----
-
-## 🔬 Stratégie de Qualité & Tests
-
-L'ensemble des fonctions noyaux (équivalences financières du *context cache*, amortissements $h_1$/$h_2$, sommes partielles) sont purgées des effets de bords de l'interface *Shiny* et extraites dans `R/logic_maths.R`.
-Ces noyaux sont protégés intégralement par des Tests Unitaires automatisés s'appuyant sur le framework de référence `testthat` de l'écosystème R.
-
-**Exécuter les tests localement :**
-```R
-testthat::test_dir("tests/testthat/")
-```
-
----
-*Développé pour orchestrer la gouvernance financière et l'audit probabiliste en contexte d'Intelligence Artificielle d'entreprise.*
+Voir le dossier [audit documentaire M1](../../KNOWLEDGE/SAGA-IA/M1/AUDIT_H4E/RAPPORT.md). Les données des préréglages sont également décrites dans les deux cadrages du corpus.

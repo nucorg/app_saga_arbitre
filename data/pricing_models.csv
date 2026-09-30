@@ -1,11 +1,38 @@
-Identifiant,Fournisseur,p_in_1M,p_out_1M
-GPT-5 Mini,OpenAI,0.25,2.00
-Claude Haiku 4.5,Anthropic,1.00,5.00
-GPT-5,OpenAI,1.25,10.00
-Gemini 2.5 Pro,Google,1.25,10.00
-Gemini 3.6 Flash,Google,1.50,7.50
-Gemini 3.1 Pro,Google,2.00,12.00
-GPT-4o,OpenAI,2.50,10.00
-GPT-5.4,OpenAI,2.50,15.00
-Claude Sonnet 4.6,Anthropic,3.00,15.00
-Claude Opus 4.6,Anthropic,5.00,25.00
+Identifiant,Fournisseur,p_in_1M,p_out_1M,p_cache_1M,date_verification
+GPT-5 Mini,OpenAI,0.25,2,,2026-09-27
+Claude Haiku 4.5,Anthropic,1,5,,2026-09-27
+GPT-5,OpenAI,1.25,10,,2026-09-27
+Gemini 2.5 Pro,Google,1.25,10,,2026-09-27
+Gemini 3.6 Flash,Google,1.5,7.5,,2026-09-27
+Gemini 3.1 Pro,Google,2,12,,2026-09-27
+GPT-4o,OpenAI,2.5,10,,2026-09-27
+GPT-5.4,OpenAI,2.5,15,0.25,2026-09-27
+Claude Sonnet 4.6,Anthropic,3,15,,2026-09-27
+Claude Opus 4.6,Anthropic,5,25,,2026-09-27
+Claude Fable 5.1,Anthropic,10,50,,2026-09-27
+Claude Opus 5.5,Anthropic,4,20,,2026-09-27
+Claude Sonnet 5,Anthropic,2,10,,2026-09-27
+Claude Mythos 5.1,Anthropic,10,50,,2026-09-27
+Claude Fable 5,Anthropic,10,50,,2026-09-27
+Claude Mythos 5,Anthropic,10,50,,2026-09-27
+Claude Opus 5,Anthropic,5,25,,2026-09-27
+Claude Opus 4.8,Anthropic,5,25,,2026-09-27
+Claude Opus 4.7,Anthropic,5,25,,2026-09-27
+Claude Opus 4.5,Anthropic,5,25,,2026-09-27
+Claude Opus 4.1,Anthropic,15,75,,2026-09-27
+Claude Opus 4,Anthropic,15,75,,2026-09-27
+Claude Sonnet 4.5,Anthropic,3,15,,2026-09-27
+Claude Sonnet 4,Anthropic,3,15,,2026-09-27
+Claude Haiku 3.5,Anthropic,0.8,4,,2026-09-27
+GPT-6 Astra,OpenAI,10,50,1,2026-09-27
+GPT-5.6 Sol,OpenAI,4,20,0.4,2026-09-27
+GPT-5.6 Terra,OpenAI,2,12,0.2,2026-09-27
+GPT-5.6 Luna,OpenAI,0.2,1.2,0.02,2026-09-27
+GPT-Rosalind-Research,OpenAI,5,25,0.5,2026-09-27
+GPT-5.5,OpenAI,5,30,0.5,2026-09-27
+Daybreak Blue,OpenAI,4,20,0.4,2026-09-27
+Daybreak Red,OpenAI,12.5,75,1.25,2026-09-27
+GPT-5.4-Mini,OpenAI,0.75,4.5,0.075,2026-09-27
+GPT-5.3-Codex,OpenAI,1.75,14,0.175,2026-09-27
+GPT-5.2,OpenAI,1.75,14,0.175,2026-09-27
+GPT-6 Astra Law *,OpenAI,12.5,62.5,1.25,2026-09-27

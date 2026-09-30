@@ -1,20 +1,98 @@
 saga_ui <- function() {
+  # Configuration du chemin d'accès aux assets (logo)
+  if (dir.exists("www")) {
+    shiny::addResourcePath("assets", normalizePath("www"))
+  }
+  
+  logo_file <- if (file.exists("www/LOGO_Q.png")) {
+    "www/LOGO_Q.png"
+  } else if (file.exists("/home/boris/VIBE/projets/qognito-content/assets/images/LOGO_Q.png")) {
+    "/home/boris/VIBE/projets/qognito-content/assets/images/LOGO_Q.png"
+  } else {
+    NULL
+  }
+  
+  logo_src <- if (!is.null(logo_file) && requireNamespace("base64enc", quietly = TRUE)) {
+    base64enc::dataURI(file = logo_file, mime = "image/png")
+  } else {
+    "LOGO_Q.png"
+  }
+
   page_navbar(
-    title = "SAGA Arbitre - Calculateur IA",
+    title = tags$span(
+      tags$img(
+        src = logo_src,
+        height = "32px",
+        style = "margin-right: 10px; vertical-align: middle;",
+        alt = "Logo Qognito"
+      ),
+      "SAGA Arbitre"
+    ),
     theme = bs_theme(
       bg = "#0F2035", fg = "#FFFFFF", primary = "#D4850F",
       base_font = font_google("Inter", local = FALSE)
     ),
     
-    # Activation de MathJax pour les formules
+    # Activation de MathJax pour les formules et styles du thème Qognito
     header = tags$head(
       tags$style(HTML("
-        '.nav-link { color: #D4850F !important; font-weight: bold; }',
-        '.nav-link.active { color: #FFFFFF !important; background-color: #D4850F !important; }',
-        '.shiny-input-container label, .control-label, .form-group label { color: #FFFFFF !important; }',
-        'input, select, .form-control { color: #FFFFFF !important; }',
-        '.value-box-value, .value-box-title { color: #FFFFFF !important; }',
-        'p, h1, h2, h3, h4, h5, h6 { color: #FFFFFF !important; }'
+        /* Brand / Titre principal en haut à gauche */
+        .navbar-brand,
+        .navbar-brand > span,
+        .navbar-brand a {
+          color: #D4850F !important;
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+        }
+
+        /* Variables bslib / Bootstrap pour la barre de navigation */
+        .navbar {
+          --bs-navbar-color: #D4850F !important;
+          --bs-navbar-hover-color: #FFAE42 !important;
+          --bs-navbar-active-color: #D4850F !important;
+          --bs-navbar-brand-color: #D4850F !important;
+        }
+
+        /* Tous les titres d'onglets (inactifs & actifs) en orange */
+        .navbar-nav .nav-link,
+        .navbar-nav > li > a,
+        .nav-tabs .nav-link,
+        .nav-underline .nav-link,
+        .nav-underline > li > a,
+        .nav-link {
+          color: #D4850F !important;
+          font-weight: 600 !important;
+        }
+
+        /* Onglet actif : orange avec indicateur de soulignement */
+        .navbar-nav .nav-link.active,
+        .navbar-nav > li.active > a,
+        .nav-tabs .nav-link.active,
+        .nav-underline .nav-link.active,
+        .nav-underline > li.active > a,
+        .nav-link.active {
+          color: #D4850F !important;
+          border-bottom: 2px solid #D4850F !important;
+          font-weight: 700 !important;
+        }
+
+        /* Survol des onglets */
+        .navbar-nav .nav-link:hover,
+        .navbar-nav > li > a:hover,
+        .nav-link:hover {
+          color: #FFAE42 !important;
+        }
+
+        /* Formulaires, valeurs et typographie */
+        .shiny-input-container label, .control-label, .form-group label { color: #FFFFFF !important; }
+        input, select, .form-control { 
+          color: #FFFFFF !important; 
+          background-color: #0F2035 !important; 
+          border: 1px solid #D4850F !important;
+        }
+        .value-box-value, .value-box-title { color: #FFFFFF !important; }
+        p, h1, h2, h3, h4, h5, h6 { color: #FFFFFF !important; }
       ")),
       tags$script(src = "https://polyfill.io/v3/polyfill.min.js?features=es6"),
       tags$script(id = "MathJax-script", async = NA, src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js")
@@ -24,15 +102,15 @@ saga_ui <- function() {
       layout_sidebar(
         sidebar = sidebar(
           title = "Paramètres de la Tâche",
-          numericInput("vol", "Volume de tâches mensuel :", value = 50, min = 1),
+          numericInput("vol", "Volume entrant mensuel :", value = 50, min = 1),
           numericInput("time_h", "Temps unitaire manuel (min) :", value = 15, min = 1),
-          numericInput("cost_h", "Coût marginal humain (€/h) :", value = 15, min = 1),
+          numericInput("cost_h", "Coût humain conventionnel (€/h) :", value = 15, min = 1),
           numericInput("cost_tokens", "C\u2081 : Co\u00fbt des tokens par t\u00e2che :", value = 0.05, min = 0, step = 0.01),
           numericInput("cost_orch", "C\u2082 : Orchestration mensuelle (\u20ac) :", value = 0, min = 0),
           numericInput("maint_h", "C\u2083 : Maintenance IA mensuelle (heures) :", value = 2, min = 0),
           sliderInput("ps", HTML("Taux de succ\u00e8s (P<sub>s</sub>) % :"), min = 1, max = 100, value = 90),
-          numericInput("build_ia", "Premier mois Agentique (\u20ac) :", value = 1200, min = 0),
-          numericInput("build_manual", "Premier mois Manuel (\u20ac) :", value = 3500, min = 0),
+          numericInput("build_ia", "Investissement initial Agentique (\u20ac) :", value = 1200, min = 0),
+          numericInput("build_manual", "Investissement initial Manuel (\u20ac) :", value = 0, min = 0),
           actionButton("add_scen", "Sauvegarder Scénario", class = "btn-primary")
         ),
         card(
@@ -40,7 +118,7 @@ saga_ui <- function() {
           plotlyOutput("plot_ctask")
         ),
         card(
-          card_header("Point Mort & ROI Cumulé"),
+          card_header("Coûts cumulés à couverture finale équivalente"),
           plotlyOutput("plot_roi")
         )
       )
@@ -106,15 +184,18 @@ saga_ui <- function() {
       layout_sidebar(
         sidebar = sidebar(
           title = "Inducteurs Humains (C3)",
-          numericInput("c3_v", "Volume mensuel de tâches (V) :", value = 500, min = 1),
-          numericInput("c3_w", "Coût horaire marginal (€/h) :", value = 15, min = 1),
+          numericInput("c3_v", "Volume mensuel de tâches (V) :", value = 31, min = 1),
+          numericInput("c3_w", "Coût horaire conventionnel (€/h) :", value = 15, min = 1),
           hr(),
           p(strong("Phase 1: Calibrage (Build Étendu)")),
           numericInput("c3_h1_input", "Effort Forfaitaire (h/mois) :", value = 15, min = 0),
           hr(),
           p(strong("Phase 2: Croisière (Run)")),
-          sliderInput("c3_escalade", "Taux d'escalade (%) :", min = 0, max = 50, value = 5, step = 0.5),
-          numericInput("c3_t_reprise", "Temps de reprise (minutes/tâche) :", value = 15, min = 1)
+          sliderInput("c3_escalade", "Taux d'escalade (%) :", min = 0, max = 50, value = 10, step = 0.5),
+          numericInput("c3_t_reprise", "Temps de reprise (minutes/tâche) :", value = 15, min = 0),
+          numericInput("c3_review", "Revue systématique (minutes/document) :", value = 0, min = 0),
+          numericInput("c3_governance", "Gouvernance et entretien (h/mois) :", value = 0, min = 0),
+          p("Zéro est une hypothèse : compléter la revue et la gouvernance avant de conclure.")
         ),
         layout_columns(
           col_widths = c(6, 6),
@@ -135,9 +216,10 @@ saga_ui <- function() {
         sidebar = sidebar(
           title = "Paramètres du Dispositif",
           sliderInput("ctp_t", "Horizon temporel (mois) :", min = 1, max = 24, value = 6),
-          numericInput("ctp_v", "Volume de tâches mensuel :", value = 500, min = 1),
+          numericInput("ctp_v", "Volume entrant mensuel :", value = 500, min = 1),
           numericInput("ctp_c", "Co\u00fbt par tentative (C\u2081) :", value = 0.05, min = 0, step = 0.01),
-          numericInput("ctp_orch", "C\u2082 : Orchestration/mois (\u20ac) :", value = 0, min = 0),
+          numericInput("ctp_orch", "C\u2082 : Orchestration/mois (\u20ac) :", value = 218, min = 0),
+          checkboxInput("ctp_detailed", "C2 est déjà le total détaillé (κ = 1)", value = TRUE),
           radioButtons("ctp_kappa", "Complexit\u00e9 (\u03ba) :", choices = c("Agent simple (\u03ba=1)" = 1, "Multi-outils (\u03ba=4)" = 4, "Multi-agents (\u03ba=12)" = 12), selected = 1),
           numericInput("ctp_w", "Co\u00fbt horaire humain (w) :", value = 15, min = 1),
           numericInput("ctp_h1", "Heures/mois (Calibrage h\u2081) :", value = 10, min = 0),
@@ -157,13 +239,57 @@ saga_ui <- function() {
             plotlyOutput("plot_ctp_donut")
           ),
           card(
-            card_header("Le Genou du Mois 3 (Coût Mensuel)"),
+            card_header("Coût mensuel — hypothèse de calibrage de trois mois"),
             plotlyOutput("plot_ctp_line")
           )
         )
       )
     ),
     
+    nav_panel("Cas M1 — Deux visions",
+      layout_sidebar(
+        sidebar = sidebar(
+          selectInput("case_preset", "Cas simulé :", c("Grands Groupes / ETI" = "enterprise", "Firme minimale Qognito" = "qognito")),
+          numericInput("case_volume", "Documents entrants / mois", 1200, min = 0),
+          numericInput("case_accepted", "Résultats finalement acceptés / mois", 1200, min = 0),
+          numericInput("case_manual", "Traitement manuel (min/document)", 30, min = 0),
+          numericInput("case_review", "Revue systématique (min/document)", 5, min = 0),
+          numericInput("case_rework", "Part nécessitant une reprise (0–1)", 0.2, min = 0, max = 1),
+          numericInput("case_rework_min", "Reprise additionnelle (min)", 15, min = 0),
+          numericInput("case_governance", "Gouvernance et entretien (h/mois)", 40, min = 0),
+          numericInput("case_hourly", "Coût humain conventionnel (EUR/h)", 60, min = 0),
+          numericInput("case_api", "Inférence, toutes tentatives (EUR/document entrant)", 0.5, min = 0),
+          numericInput("case_infra", "C2 récurrent incrémental (EUR/mois)", 2400, min = 0),
+          numericInput("case_investment", "Investissement initial (EUR)", 36000, min = 0),
+          numericInput("case_amort", "Répartition analytique (mois)", 24, min = 1),
+          numericInput("case_alpha", "Part réaffectable du temps net (0–1)", 0.5, min = 0, max = 1),
+          numericInput("case_value", "Valeur conventionnelle réaffectée (EUR/h)", 60, min = 0),
+          numericInput("case_calibration", "Durée du calibrage (mois)", 3, min = 0),
+          numericInput("case_h1", "Effort humain TOTAL en calibrage (h/mois)", 300, min = 0),
+          numericInput("case_horizon", "Horizon (mois)", 12, min = 1)
+        ),
+        card(card_header("Simulation de référence H4E"),
+             p("Les préréglages sont des hypothèses, pas des mesures de terrain. Le solde valorise une capacité et ne constitue pas une économie de trésorerie."),
+             tableOutput("case_results"), textOutput("case_coverage"))
+      )
+    ),
+    nav_panel("Prix API",
+      layout_columns(
+        col_widths = 12,
+        card(
+          card_header("Gestion des Prix API (Catalogue Local)"),
+          p("Sélectionnez une ligne pour la supprimer. Modifiez directement les cellules. Cliquez sur Sauvegarder pour écrire dans le CSV."),
+          layout_columns(
+            col_widths = c(4, 4, 4),
+            actionButton("add_row", "Ajouter un Modèle", icon = icon("plus")),
+            actionButton("delete_row", "Supprimer la sélection", icon = icon("trash"), class = "btn-warning"),
+            actionButton("save_pricing", "Sauvegarder dans le CSV", class = "btn-primary", icon = icon("save"))
+          ),
+          hr(),
+          DTOutput("table_pricing_edit")
+        )
+      )
+    ),
     nav_panel("Télémétrie du Terrain",
       layout_columns(
         col_widths = c(4, 8),
@@ -171,23 +297,27 @@ saga_ui <- function() {
           card_header("Import des logs"),
           selectInput("squad_dir", "1. Squad ciblé :", choices = NULL),
           selectInput("month_dir", "2. Période (Mois) :", choices = NULL),
-          numericInput("cache_discount", "Ratio d'abattement Cache (ex: 0.25 pour Gemini) :", value = 0.25, min = 0, max = 1, step = 0.05),
+          numericInput("cache_discount", "Hypothèse : part du prix entrée pour le cache :", value = 0.25, min = 0, max = 1, step = 0.05),
+          numericInput("telemetry_fx", "Conversion USD vers EUR :", value = 0.88, min = 0.001),
+          checkboxInput("telemetry_prompt_cache", "Prompt inclut déjà les jetons cache", value = FALSE),
+          checkboxInput("telemetry_output_thinking", "Output inclut déjà Thinking", value = FALSE),
+          checkboxInput("telemetry_confirm", "Période commune, résultats finaux uniques et coûts humains/infra complets confirmés", value = FALSE),
+          p("C2 et heures humaines proviennent de Manuel vs Agentique. Tarifs locaux historiques : estimation, pas facture vérifiée."),
           actionButton("process_logs", "Analyser la Télémétrie mensuelle", class = "btn-primary", width = "100%")
         ),
         card(
-          card_header("Résultats Réels vs Théorie"),
+          card_header("Résultats et coût reconstitué"),
           layout_columns(
-            value_box("Volume Réel", uiOutput("real_vol"), theme_color = "primary"),
-            value_box("Succès Réel", uiOutput("real_ps"), theme_color = "primary"),
-            value_box("C_task Réel", uiOutput("real_ctask"), theme_color = "primary"),
-            value_box("Décomposition", uiOutput("real_breakdown"), theme_color = "secondary")
+            value_box("Volume Réel", uiOutput("real_vol"), theme = "primary"),
+            value_box("Succès Réel", uiOutput("real_ps"), theme = "primary"),
+            value_box("Coût estimé / accepté", uiOutput("real_ctask"), theme = "primary"),
+            value_box("Décomposition", uiOutput("real_breakdown"), theme = "secondary")
           ),
-          markdown("#### Données brutes de facturation (Extrait)"),
+          textOutput("telemetry_status"),
+          h4("Données brutes de facturation"),
           DTOutput("table_billing")
         )
       )
-    ),
-    
-
+    )
   )
 }

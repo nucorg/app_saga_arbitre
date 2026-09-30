@@ -1,19 +1,23 @@
 #' Calcul du Coût Complet par Tâche (C_task)
 #' Formule : (Sum(C_tokens) + C_infra + C_revue_humaine) / P_s
 compute_cost <- function(c_tokens, c_infra, c_revue_humaine, p_s) {
+  if (anyNA(c(c_tokens, c_infra, c_revue_humaine, p_s))) return(NA_real_)
+  if (any(!is.finite(c(c_tokens, c_infra, c_revue_humaine, p_s))) ||
+      min(c_tokens, c_infra, c_revue_humaine, p_s) < 0 || p_s > 1) stop("Coûts ou taux invalides")
   if (p_s == 0) return(Inf)
   (c_tokens + c_infra + c_revue_humaine) / p_s
 }
 
 #' Calcul de la Fiabilité Composée
-#' Formule : p^N
+#' Formule : p^N, modèle homogène indépendant ; pas une mesure de bout en bout
 compute_composed_reliability <- function(p, n) {
+  if (anyNA(c(p, n)) || p < 0 || p > 1 || n < 0 || n != floor(n)) stop("Probabilité ou nombre d’étapes invalide")
   p^n
 }
 
 #' Calcul du ROI et Point Mort sur 12 mois
 #' Retourne un dataframe pour ggplot
-compute_roi <- function(cost_manual, cost_agent, volume_mensuel, build_initial_ia = 1200, build_initial_manual = 3500) {
+compute_roi <- function(cost_manual, cost_agent, volume_mensuel, build_initial_ia = 1200, build_initial_manual = 0) {
   months <- 1:12
   cost_manual_cum <- build_initial_manual + (cost_manual * volume_mensuel * months)
   cost_agent_cum <- build_initial_ia + (cost_agent * volume_mensuel * months)
@@ -76,10 +80,10 @@ compute_c1_eur <- function(cost_usd, usd_eur_rate) {
   cost_usd * usd_eur_rate
 }
 
-#' Calcul des jetons équivalents en tenant compte du cache (réduction de 75% sur le prix du cache)
+#' Jetons équivalents sous hypothèse de ratio cache ; 0.25 n'est pas un tarif universel
 #' @return list(equiv_in, equiv_out)
 compute_equivalent_tokens <- function(prompt_in, cache_in, output, thinking, cache_discount = 0.25) {
-  # Les jetons provenant du cache coûtent 25% du prix standard (soit une décote de 75%)
+  # Hypothèse de scénario, à remplacer par le tarif applicable.
   equiv_in <- prompt_in + (cache_in * cache_discount)
   equiv_out <- output + thinking
   list(equiv_in = equiv_in, equiv_out = equiv_out)
@@ -88,7 +92,7 @@ compute_equivalent_tokens <- function(prompt_in, cache_in, output, thinking, cac
 #' Mise à l'échelle unitaire (par rapport au volume)
 compute_equivalent_tokens_unit <- function(equiv_in, equiv_out, volume) {
   if (is.na(volume) || volume <= 0) {
-    return(list(equiv_in_unit = equiv_in, equiv_out_unit = equiv_out))
+    return(list(equiv_in_unit = NA_real_, equiv_out_unit = NA_real_))
   }
   list(equiv_in_unit = equiv_in / volume, equiv_out_unit = equiv_out / volume)
 }
@@ -121,8 +125,10 @@ compute_c2_maths <- function(total_fixe_usd, total_var_unit_usd, volume_v, usd_e
 #' @param taux_escalade Taux de tâches nécessitant une reprise humaine (entre 0 et 1)
 #' @param temps_reprise_minutes Temps moyen pour traiter manuellement une tâche échouée (en minutes)
 #' @return Nombre d'heures mensuelles en phase de croisière (h2)
-compute_h2_cruise <- function(volume_mensuel, taux_escalade, temps_reprise_minutes) {
-  if (volume_mensuel < 0 || taux_escalade < 0 || temps_reprise_minutes < 0) return(0)
-  
-  (volume_mensuel * taux_escalade) * (temps_reprise_minutes / 60)
+compute_h2_cruise <- function(volume_mensuel, taux_escalade, temps_reprise_minutes,
+                              review_minutes = 0, governance_hours = 0) {
+  vals <- c(volume_mensuel, taux_escalade, temps_reprise_minutes, review_minutes, governance_hours)
+  if (anyNA(vals)) return(NA_real_)
+  if (any(!is.finite(vals)) || any(vals < 0) || taux_escalade > 1) stop("Inducteurs humains invalides")
+  volume_mensuel * (review_minutes + taux_escalade * temps_reprise_minutes) / 60 + governance_hours
 }

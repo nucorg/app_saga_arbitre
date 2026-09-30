@@ -70,7 +70,7 @@ saga_server <- function(input, output, session) {
   })
   
   output$plot_roi <- renderPlotly({
-    df_roi <- compute_roi(cost_manual_task(), cost_ia_task(), input$vol, input$build_ia, input$build_manual)
+    df_roi <- compute_roi(cost_manual_task(), cost_ia_task(), input$vol * input$ps / 100, input$build_ia, input$build_manual)
     
     p <- ggplot(df_roi, aes(x = Mois, y = Cout_Cumule, color = Type)) +
       geom_line(linewidth = 1.5) +
@@ -97,12 +97,75 @@ saga_server <- function(input, output, session) {
   
   # -- Onglet C1 --
   
+  rv_pricing_trigger <- reactiveVal(0)
+  
   pricing_data <- reactive({
-    if (file.exists("data/pricing_models.csv")) {
-      read.csv("data/pricing_models.csv", stringsAsFactors = FALSE)
-    } else {
-      data.frame(Identifiant = character(), Fournisseur = character(), p_in_1M = numeric(), p_out_1M = numeric())
+    rv_pricing_trigger() # dependency
+    read_api_pricing("data/pricing_models.csv")
+  })
+  
+  # -- Onglet Prix API --
+  rv_pricing_edit <- reactiveVal(isolate(read_api_pricing("data/pricing_models.csv")))
+  
+  output$table_pricing_edit <- renderDT({
+    datatable(
+      isolate(rv_pricing_edit()),
+      editable = TRUE,
+      rownames = FALSE,
+      selection = "single",
+      options = list(pageLength = 100, dom = "tip", scrollX = TRUE)
+    )
+  })
+  
+  proxy_pricing_edit <- dataTableProxy("table_pricing_edit")
+  
+  observeEvent(input$add_row, {
+    df <- rv_pricing_edit()
+    new_row <- data.frame(
+      Identifiant = "Nouveau Modèle",
+      Fournisseur = "",
+      p_in_1M = 0,
+      p_out_1M = 0,
+      p_cache_1M = NA_real_,
+      date_verification = Sys.Date(),
+      stringsAsFactors = FALSE
+    )
+    # Remplir avec des NAs pour correspondre au dataframe
+    for (col in names(df)) {
+      if (!col %in% names(new_row)) new_row[[col]] <- NA
     }
+    new_row <- new_row[, names(df), drop = FALSE]
+    
+    # Insérer en HAUT (ligne 1) pour qu'il soit immédiatement visible
+    new_df <- rbind(new_row, df)
+    rv_pricing_edit(new_df)
+    replaceData(proxy_pricing_edit, new_df, resetPaging = FALSE, rownames = FALSE)
+  })
+  
+  observeEvent(input$delete_row, {
+    selected <- input$table_pricing_edit_rows_selected
+    if (length(selected) > 0) {
+      df <- rv_pricing_edit()
+      new_df <- df[-selected, , drop = FALSE]
+      rv_pricing_edit(new_df)
+      replaceData(proxy_pricing_edit, new_df, resetPaging = FALSE, rownames = FALSE)
+    } else {
+      showNotification("Veuillez sélectionner une ligne à supprimer.", type = "warning")
+    }
+  })
+  
+  observeEvent(input$table_pricing_edit_cell_edit, {
+    info <- input$table_pricing_edit_cell_edit
+    edit_data <- rv_pricing_edit()
+    edit_data[info$row, info$col + 1] <- DT::coerceValue(info$value, edit_data[info$row, info$col + 1])
+    rv_pricing_edit(edit_data)
+    replaceData(proxy_pricing_edit, edit_data, resetPaging = FALSE, rownames = FALSE)
+  })
+  
+  observeEvent(input$save_pricing, {
+    save_api_pricing(rv_pricing_edit(), "data/pricing_models.csv")
+    rv_pricing_trigger(rv_pricing_trigger() + 1)
+    showNotification("Fichier CSV Prix API mis à jour avec succès !", type = "message")
   })
   
   observe({
@@ -257,7 +320,8 @@ saga_server <- function(input, output, session) {
     h2_val <- compute_h2_cruise(
       volume_mensuel = input$c3_v,
       taux_escalade = as.numeric(input$c3_escalade) / 100,
-      temps_reprise_minutes = input$c3_t_reprise
+      temps_reprise_minutes = input$c3_t_reprise,
+      review_minutes = input$c3_review, governance_hours = input$c3_governance
     )
     
     list(h1 = h1_val, h2 = h2_val, w = input$c3_w)
@@ -299,7 +363,7 @@ saga_server <- function(input, output, session) {
       v = input$ctp_v,
       t_horizon = input$ctp_t,
       c_orch = input$ctp_orch,
-      kappa = as.numeric(input$ctp_kappa),
+      kappa = if (isTRUE(input$ctp_detailed)) 1 else as.numeric(input$ctp_kappa),
       w = input$ctp_w,
       h1 = input$ctp_h1,
       h2 = input$ctp_h2
@@ -330,7 +394,7 @@ saga_server <- function(input, output, session) {
       v = input$ctp_v,
       t_horizon = input$ctp_t,
       c_orch = input$ctp_orch,
-      kappa = as.numeric(input$ctp_kappa),
+      kappa = if (isTRUE(input$ctp_detailed)) 1 else as.numeric(input$ctp_kappa),
       w = input$ctp_w,
       h1 = input$ctp_h1,
       h2 = input$ctp_h2
@@ -353,189 +417,99 @@ saga_server <- function(input, output, session) {
     ggplotly(p, tooltip = c("x", "y")) %>% layout(plot_bgcolor="transparent", paper_bgcolor="transparent")
   })
   
-  # -- Onglet 3 : Télémétrie --
-  
-  telemetry <- reactiveValues(df = NULL, vol = 0, ps = 0, ctask = 0, c_infra = 0, c_tokens = 0, c_maint = 0)
-  # Logic for dynamic dropdowns
-  base_telemetry_dir <- 'telemetry'
+  # -- Cas de référence, mêmes définitions pour les deux visions --
+  observeEvent(input$case_preset, {
+    enterprise <- identical(input$case_preset, "enterprise")
+    vals <- if (enterprise) list(volume=1200, accepted=1200, manual=30, review=5,
+      rework=.2, rework_min=15, governance=40, hourly=60, api=.5, infra=2400,
+      investment=36000, amort=24, alpha=.5, value=60, calibration=3, h1=300, horizon=12)
+    else list(volume=150, accepted=150, manual=45, review=5, rework=.1,
+      rework_min=15, governance=4, hourly=15, api=.05, infra=218,
+      investment=0, amort=24, alpha=.5, value=15, calibration=3, h1=30, horizon=12)
+    for (name in names(vals)) updateNumericInput(session, paste0("case_", name), value=vals[[name]])
+  })
+  case_result <- reactive({
+    req(!is.null(input$case_volume), input$case_amort, input$case_horizon, cancelOutput = FALSE)
+    tryCatch(compute_scenario(volume=input$case_volume, accepted=input$case_accepted,
+      manual_minutes=input$case_manual, review_minutes=input$case_review,
+      rework_rate=input$case_rework, rework_minutes=input$case_rework_min,
+      governance_hours=input$case_governance, hourly_cost=input$case_hourly,
+      api_per_input=input$case_api, infra_month=input$case_infra,
+      investment=input$case_investment, amort_months=input$case_amort,
+      horizon=input$case_horizon, alpha=input$case_alpha, value_hour=input$case_value,
+      calibration_months=input$case_calibration, calibration_hours=input$case_h1),
+      error=function(e) { validate(need(FALSE, conditionMessage(e))) })
+  })
+  output$case_results <- renderTable({
+    r <- case_result()
+    data.frame(Indicateur=c("Manuel h/mois", "Humain résiduel h/mois", "Temps net h/mois",
+      "Temps réaffectable h/mois", "C1 EUR/mois", "C2 analytique EUR/mois", "C3 EUR/mois",
+      "CTP analytique EUR/mois", "EUR / résultat accepté", "Solde conventionnel EUR/mois",
+      "Solde conventionnel sur horizon EUR", "Coût sur horizon EUR (investissement inclus une fois)"),
+      Valeur=unlist(r[c("h0","h2","net_hours","reallocated_hours","C1","C2","C3","CTP",
+        "cost_accepted","balance","horizon_balance","horizon_cost")]))
+  }, digits=2)
+  output$case_coverage <- renderText({
+    if (!case_result()$comparable_coverage)
+      "Couverture incomplète : le solde ne démontre pas une équivalence de service avec le manuel."
+    else "Couverture nominale identique supposée ; qualité finale à vérifier sur un lot indépendant."
+  })
+
+  # -- Télémétrie : pas de prix deviné, ni de zéro substitué à une donnée manquante --
+  raw_telemetry <- reactiveVal(list(billing=NULL, compliance=list(), error=NULL))
   observe({
-    if(dir.exists(base_telemetry_dir)){
-      squads <- list.dirs(base_telemetry_dir, recursive=FALSE, full.names=FALSE)
-      updateSelectInput(session, 'squad_dir', choices = squads)
-    }
+    if (dir.exists("telemetry")) updateSelectInput(session, "squad_dir",
+      choices=list.dirs("telemetry", recursive=FALSE, full.names=FALSE))
   })
-  
   observeEvent(input$squad_dir, {
-    if(input$squad_dir != '') {
-      squad_path <- file.path(base_telemetry_dir, input$squad_dir)
-      months <- list.dirs(squad_path, recursive=FALSE, full.names=FALSE)
-      updateSelectInput(session, 'month_dir', choices = months)
-    }
+    req(input$squad_dir)
+    updateSelectInput(session, "month_dir", choices=list.dirs(file.path("telemetry", input$squad_dir), recursive=FALSE, full.names=FALSE))
+    raw_telemetry(list(billing=NULL, compliance=list(), error=NULL))
   })
-  
+  observeEvent(input$month_dir, { raw_telemetry(list(billing=NULL, compliance=list(), error=NULL)) })
   observeEvent(input$process_logs, {
     req(input$squad_dir, input$month_dir)
-    
-    target_dir <- file.path(base_telemetry_dir, input$squad_dir, input$month_dir)
-    if(!dir.exists(target_dir)) return(NULL)
-    
-    bill_files <- list.files(target_dir, pattern = 'cout_carbone_.*\\.md$', full.names = TRUE)
-    comp_files <- list.files(target_dir, pattern = '.*_squad_.*\\.md$', full.names = TRUE)
-    
-    # Aggregation billing
-    list_df <- lapply(bill_files, parse_billing_md)
-    # Keep only non-nulls and non-empties
-    list_df <- list_df[sapply(list_df, function(x) !is.null(x) && nrow(x) > 0)]
-    
-    if(length(list_df) == 0) return(NULL)
-    
-    # Remove TOTAL rows and bind rows to aggregate
-    df_all <- do.call(rbind, lapply(list_df, function(df) df[!grepl('^TOTAL', df[['Rôle (Task)']], ignore.case=TRUE), ]))
-    
-    # Group by Role and Model to sum metrics
-    library(dplyr)
-    library(dplyr)
-    df_agg <- df_all %>% 
-      group_by(`Rôle (Task)`, `Modèle`) %>%
-      summarise(
-        Reqs = sum(Reqs, na.rm=TRUE),
-        `Prompt (In)` = sum(`Prompt (In)`, na.rm=TRUE),
-        `Cache (In)` = sum(`Cache (In)`, na.rm=TRUE),
-        Output = sum(Output, na.rm=TRUE),
-        Thinking = sum(Thinking, na.rm=TRUE),
-        .groups = 'drop'
-      ) %>% 
-      ungroup()
-      
-    list_comp <- lapply(comp_files, parse_compliance_md)
-    total_vol <- 0
-    sum_vol_ps <- 0
-    for(res in list_comp){
-      total_vol <- total_vol + res$volume
-      sum_vol_ps <- sum_vol_ps + (res$volume * res$success_rate)
-    }
-    avg_ps <- if(total_vol > 0) sum_vol_ps / total_vol else 0
-    
-    if (nrow(df_agg) > 0) {
-      tot_row <- data.frame(
-        `Rôle (Task)` = "TOTAL GÉNÉRAL",
-        `Modèle` = "",
-        Reqs = sum(df_agg$Reqs, na.rm = TRUE),
-        `Prompt (In)` = sum(df_agg$`Prompt (In)`, na.rm = TRUE),
-        `Cache (In)` = sum(df_agg$`Cache (In)`, na.rm = TRUE),
-        Output = sum(df_agg$Output, na.rm = TRUE),
-        Thinking = sum(df_agg$Thinking, na.rm = TRUE),
-        check.names = FALSE
-      )
-      
-      tot_in <- tot_row$`Prompt (In)` + (tot_row$`Cache (In)` * input$cache_discount)
-      tot_out <- tot_row$Output + tot_row$Thinking
-      
-      equiv_row <- data.frame(
-        `Rôle (Task)` = "ÉQUIVALENT IN/OUT (BATCH)",
-        `Modèle` = "",
-        Reqs = NA,
-        `Prompt (In)` = round(tot_in, 2),
-        `Cache (In)` = NA,
-        Output = round(tot_out, 2),
-        Thinking = NA,
-        check.names = FALSE
-      )
-      
-      equiv_unit <- data.frame(
-        `Rôle (Task)` = "ÉQUIVALENT IN/OUT (UNITAIRE)",
-        `Modèle` = "Copier vers C1 / CTP ->",
-        Reqs = NA,
-        `Prompt (In)` = round(if (total_vol > 0) tot_in / total_vol else tot_in, 2),
-        `Cache (In)` = NA,
-        Output = round(if (total_vol > 0) tot_out / total_vol else tot_out, 2),
-        Thinking = NA,
-        check.names = FALSE
-      )
-      
-      df_agg <- rbind(df_agg, tot_row, equiv_row, equiv_unit)
-    }
-    
-    # Aggregation compliance
-    telemetry$df <- df_agg
-    telemetry$vol <- total_vol
-    telemetry$ps <- round(avg_ps, 1)
-    
-    if(nrow(df_agg) > 0) {
-      compute_api_row <- function(mod, p_in, c_in, out, thk) {
-        if (is.na(p_in)) p_in <- 0
-        if (is.na(c_in)) c_in <- 0
-        if (is.na(out)) out <- 0
-        if (is.na(thk)) thk <- 0
-        
-        if (grepl('pro', mod, ignore.case=TRUE)) {
-          prix_in <- 1.25; prix_out <- 5.00
-        } else if (grepl('flash', mod, ignore.case=TRUE)) {
-          prix_in <- 0.075; prix_out <- 0.30
-        } else {
-          prix_in <- 1.00; prix_out <- 4.00
-        }
-        
-        cost_in <- (p_in * prix_in + c_in * (prix_in * 0.25)) / 1000000
-        cost_out <- ((out + thk) * prix_out) / 1000000
-        cost_in + cost_out
-      }
-      
-      compute_rows <- df_agg[!grepl('TOTAL GÉNÉRAL|ÉQUIVALENT', df_agg[['Rôle (Task)']], ignore.case=TRUE), ]
-      total_api_cost <- sum(mapply(
-        compute_api_row,
-        compute_rows[['Modèle']],
-        as.numeric(compute_rows[['Prompt (In)']]),
-        as.numeric(compute_rows[['Cache (In)']]),
-        as.numeric(compute_rows[['Output']]),
-        as.numeric(compute_rows[['Thinking']])
-      ))
-      
-      c_infra <- input$cost_orch / max(1, telemetry$vol)
-      c_tokens_unitaire <- total_api_cost / max(1, telemetry$vol)
-      c_maint <- (input$maint_h * input$cost_h) / max(1, telemetry$vol)
-      
-      telemetry$c_infra <- c_infra
-      telemetry$c_tokens <- c_tokens_unitaire
-      telemetry$c_maint <- c_maint
-      
-      telemetry$ctask <- compute_cost(
-        c_tokens = c_tokens_unitaire, 
-        c_infra = c_infra, 
-        c_revue_humaine = c_maint, 
-        p_s = max(0.01, telemetry$ps/100)
-      )
-    }
+    target <- file.path("telemetry", input$squad_dir, input$month_dir)
+    bills <- list.files(target, pattern="cout_carbone_.*[.]md$", full.names=TRUE)
+    comps <- list.files(target, pattern=".*_squad_.*[.]md$", full.names=TRUE)
+    tryCatch({
+      if (anyDuplicated(unname(tools::md5sum(bills))) || anyDuplicated(unname(tools::md5sum(comps))))
+        stop("Journaux identiques détectés : dédoublonner avant calcul.")
+      dfs <- lapply(bills, parse_billing_md)
+      if (any(vapply(dfs, is.null, logical(1)))) stop("Un journal de facturation est illisible.")
+      raw_telemetry(list(billing=if (length(dfs)) do.call(rbind, dfs) else NULL,
+        compliance=lapply(comps, parse_compliance_md), error=NULL))
+    }, error=function(e) raw_telemetry(list(billing=NULL, compliance=list(), error=conditionMessage(e))))
   })
-  
-  output$real_vol <- renderUI({ telemetry$vol })
-  output$real_ps <- renderUI({ paste0(telemetry$ps, " %") })
-  output$real_ctask <- renderUI({ sprintf("%.2f €", telemetry$ctask) })
-  
+  telemetry_result <- reactive({
+    raw <- raw_telemetry()
+    res <- compute_telemetry(raw$billing, raw$compliance, pricing_data(),
+      usd_eur_rate=input$telemetry_fx, cache_ratio=input$cache_discount,
+      infra_eur=input$cost_orch, human_hours=input$maint_h, hourly_cost=input$cost_h,
+      confirmed=isTRUE(input$telemetry_confirm),
+      prompt_includes_cache=isTRUE(input$telemetry_prompt_cache),
+      output_includes_thinking=isTRUE(input$telemetry_output_thinking))
+    if (!is.null(raw$error)) res$status <- raw$error
+    if (any(vapply(raw$compliance, function(x) identical(x$basis, "legacy_rate_estimate"), logical(1))))
+      res$status <- paste(res$status, "Acceptés estimés d'après le taux historique arrondi, à confirmer comme taux final.")
+    res
+  })
+  fmt <- function(x, unit="") {
+    if (length(x) != 1 || is.na(x)) "Données manquantes"
+    else if (!is.finite(x)) "Non fini : aucun accepté"
+    else paste0(format(round(x, 2), trim=TRUE), unit)
+  }
+  output$real_vol <- renderUI({ fmt(telemetry_result()$volume) })
+  output$real_ps <- renderUI({ fmt(100 * telemetry_result()$ps, " %") })
+  output$real_ctask <- renderUI({ fmt(telemetry_result()$ctask, " EUR") })
+  output$telemetry_status <- renderText({ telemetry_result()$status })
   output$real_breakdown <- renderUI({
-    if (telemetry$vol == 0) return(tags$span("En attente de données..."))
-    HTML(sprintf(
-      "<div style='font-size: 0.35em; line-height: 1.2; color: #FFFFFF; font-weight: normal;'>
-       <strong>C\u2081 (API) :</strong> %.2f €<br/>
-       <strong>C\u2082 (Infra) :</strong> %.2f €<br/>
-       <strong>C\u2083 (Maint) :</strong> %.2f €<br/>
-       <strong>P<sub>s</sub> (Succès) :</strong> %.2f<br/>
-       <hr style='margin: 4px 0; border-color: rgba(255,255,255,0.2);'/>
-       <i>(%.2f + %.2f + %.2f) &divide; %.2f</i>
-       </div>",
-       telemetry$c_tokens, 
-       telemetry$c_infra,
-       telemetry$c_maint,
-       telemetry$ps / 100,
-       telemetry$c_tokens,
-       telemetry$c_infra,
-       telemetry$c_maint,
-       telemetry$ps / 100
-    ))
+    r <- telemetry_result()
+    tags$p(paste("Totaux période : API", fmt(r$api_eur, " EUR"), "; C2", fmt(r$infra_eur, " EUR"),
+      "; humain", fmt(r$human_eur, " EUR"), "; acceptés", fmt(r$accepted)))
   })
-  
   output$table_billing <- renderDT({
-    req(telemetry$df)
-    datatable(telemetry$df, options = list(pageLength = 15, dom = 't'))
+    req(raw_telemetry()$billing)
+    datatable(raw_telemetry()$billing, options=list(pageLength=15, dom="t"))
   })
 }

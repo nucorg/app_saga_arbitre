@@ -72,7 +72,7 @@ test_that("compute_equivalent_tokens_unit divise correctement par le volume", {
   
   # Securite volume = 0
   res_zero <- compute_equivalent_tokens_unit(equiv_in = 1000, equiv_out = 500, volume = 0)
-  expect_equal(res_zero$equiv_in_unit, 1000)
+  expect_true(is.na(res_zero$equiv_in_unit))
 })
 
 test_that("compute_c2_maths dissocie correctement Fixe et Variable selon la Taxonomie", {
@@ -100,6 +100,5 @@ test_that("compute_h2_cruise calcule correctement les heures d'escalade mensuell
   expect_equal(h2_parfait, 0)
   
   # Protection contre valeurs négatives
-  h2_neg <- compute_h2_cruise(volume_mensuel = -10, taux_escalade = 0.05, temps_reprise_minutes = 12)
-  expect_equal(h2_neg, 0)
+  expect_error(compute_h2_cruise(volume_mensuel = -10, taux_escalade = 0.05, temps_reprise_minutes = 12))
 })
