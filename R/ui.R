@@ -6,8 +6,6 @@ saga_ui <- function() {
   
   logo_file <- if (file.exists("www/LOGO_Q.png")) {
     "www/LOGO_Q.png"
-  } else if (file.exists("/home/boris/VIBE/projets/qognito-content/assets/images/LOGO_Q.png")) {
-    "/home/boris/VIBE/projets/qognito-content/assets/images/LOGO_Q.png"
   } else {
     NULL
   }
