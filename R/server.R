@@ -1,100 +1,134 @@
 saga_server <- function(input, output, session) {
   
-  # -- Onglet 1 : Simulateur --
-  
-  # Stockage des scenarios
+  # -- Onglet 1 : un mois stabilisé --
   scenarios_rv <- reactiveValues(data = list())
-  
-  # Calcul du cout humain unitaire
-  cost_manual_task <- reactive({
-    (input$time_h / 60) * input$cost_h
+  monthly_inputs <- reactive({
+    values <- setNames(lapply(monthly_input_names, function(id) input[[id]]), monthly_input_names)
+    if (!is.null(values$projection_months)) values$projection_months <- suppressWarnings(as.numeric(values$projection_months))
+    values
   })
-  
-  # Calcul du cout IA unitaire
-  cost_ia_task <- reactive({
-    if (is.null(input$vol) || input$vol <= 0) return(0)
-    compute_cost(
-      c_tokens = input$cost_tokens,
-      c_infra = input$cost_orch / input$vol,
-      c_revue_humaine = (input$maint_h * input$cost_h) / input$vol,
-      p_s = input$ps / 100
-    )
+  monthly_result <- reactive({
+    tryCatch(compute_monthly_comparison(monthly_inputs()), error = function(e) {
+      validate(need(FALSE, conditionMessage(e)))
+    })
   })
-  
+  observeEvent(input$load_monthly_example, {
+    example <- read_monthly_example()
+    for (id in setdiff(monthly_input_names, "projection_months"))
+      updateNumericInput(session, id, value = example$inputs[[id]])
+    updateSelectInput(session, "projection_months", selected = as.character(example$inputs$projection_months))
+    showNotification("Exemple Veille — Section 1 chargé. Vous pouvez modifier les paramètres.", type = "message")
+  })
+  monthly_fmt <- function(x, digits = 0) {
+    if (is.na(x) || !is.finite(x)) return("Non défini")
+    formatC(x, format = "f", digits = digits, big.mark = "\u202f", decimal.mark = ",")
+  }
+  money <- function(x, digits = 0) paste0(monthly_fmt(x, digits), "\u00a0€")
+  output$monthly_c1_hint <- renderText({
+    paste0("Équivalent : ", money(monthly_result()$c1_per_input, 2), " par entrée.")
+  })
+  output$monthly_c3_hint <- renderText({
+    r <- monthly_result(); x <- monthly_inputs()
+    paste0(monthly_fmt(x$maint_h, 1), " h × ", money(x$cost_h, 2), "/h = ", money(r$c3), "/mois.")
+  })
+  output$monthly_summary <- renderUI({
+    r <- monthly_result(); x <- monthly_inputs()
+    metric <- function(label, value, id, number) tags$div(class = "monthly-metric",
+      tags$span(label), tags$strong(value, id = id, `data-value` = number))
+    tagList(
+      p(strong(paste0(monthly_fmt(r$accepted, 1), " résultats finalement acceptés / mois")),
+        paste0(" pour ", monthly_fmt(x$vol, 1), " entrées et ", monthly_fmt(x$ps, 1), " % d’acceptation finale.")),
+      tags$div(class = "monthly-metrics",
+        metric("Fonctionnement courant", paste0(money(r$current), "/mois"), "monthly-current", r$current),
+        metric("Part d’investissement", paste0(money(r$allocation), "/mois"), "monthly-allocation", r$allocation),
+        metric("Coût mensuel analytique", paste0(money(r$analytical), "/mois"), "monthly-analytical", r$analytical)),
+      if (r$accepted > 0) p(
+        "Par résultat accepté : ", strong(paste0(money(r$current_per_accepted, 2), " courant"), id = "monthly-unit-current", `data-value` = r$current_per_accepted),
+        " puis ", strong(paste0(money(r$analytical_per_accepted, 2), " analytique"), id = "monthly-unit-analytical", `data-value` = r$analytical_per_accepted), ".")
+      else p("Aucun résultat finalement accepté : les coûts mensuels restent connus, mais les coûts par résultat et la comparaison unitaire ne sont pas définis."),
+      p(paste0("Répartition : ", money(x$build_ia), " / ", monthly_fmt(x$amort_months), " mois = ", money(r$allocation), "/mois.")),
+      if (r$accepted > 0) p(paste0("Écart de coûts analytiques avec le manuel : ", money(r$manual_analytical - r$analytical), "/mois. Cet écart n’est pas automatiquement une économie de trésorerie.")))
+  })
+  output$monthly_breakdown <- renderTable({
+    r <- monthly_result()
+    data.frame(
+      Poste = c("C1 — Utilisation des modèles", "C2 — Infrastructure logicielle", "C3 — Travail humain", "Fonctionnement courant", "Part mensuelle d’investissement", "Coût mensuel analytique"),
+      `Manuel (€/mois)` = c("—", "—", money(r$manual_current), money(r$manual_current), money(r$manual_allocation), money(r$manual_analytical)),
+      `Dispositif (€/mois)` = vapply(c(r$c1, r$c2, r$c3, r$current, r$allocation, r$analytical), money, character(1)),
+      check.names = FALSE)
+  }, striped = TRUE, bordered = FALSE, spacing = "s", width = "100%", rownames = FALSE)
   observeEvent(input$add_scen, {
-    scen_id <- paste("Scénario", length(scenarios_rv$data) + 1)
-    
-    new_scen <- data.frame(
-      Scenario = scen_id,
-      C_task = cost_ia_task(),
-      Type = "Agent IA"
-    )
-    scenarios_rv$data[[scen_id]] <- new_scen
-  })
-  
-  output$plot_ctask <- renderPlotly({
-    baselines <- data.frame(
-      Scenario = c("Manuel"),
-      C_task = c(cost_manual_task()),
-      Type = c("Humain")
-    )
-    
-    if (length(scenarios_rv$data) > 0) {
-      scen_df <- bind_rows(scenarios_rv$data)
-      df_plot <- bind_rows(baselines, scen_df)
-    } else {
-      df_plot <- baselines
-      # Ajout du scenario en cours de simulation meme si non sauvegardé
-      current <- data.frame(
-        Scenario = "Simulation",
-        C_task = cost_ia_task(),
-        Type = "Agent IA"
-      )
-      df_plot <- bind_rows(df_plot, current)
+    result <- tryCatch(compute_monthly_comparison(monthly_inputs()), error = function(e) NULL)
+    if (is.null(result) || result$accepted <= 0) {
+      showNotification("Renseignez des paramètres valides et au moins un résultat accepté avant d’ajouter une comparaison.", type = "warning")
+      return()
     }
-    
-    p <- ggplot(df_plot, aes(x = Scenario, y = C_task, fill = Type)) +
-      geom_col(width = 0.5) +
-      geom_text(aes(label = sprintf("%.2f €", C_task)), vjust = -0.5, color = "white", size = 5) +
-      scale_fill_manual(values = c("Humain" = "#FFFFFF", "Agent IA" = "#D4850F")) +
-      labs(y = "Coût Complet par Tâche (€)", x = "") +
-      theme_minimal(base_size = 14) +
-      theme(
-        panel.background = element_rect(fill = "transparent", color = NA),
-        plot.background = element_rect(fill = "transparent", color = NA),
-        text = element_text(color = "white"),
-        axis.text = element_text(color = "white"),
-        legend.position = "none"
-      )
-    ggplotly(p, tooltip = c("x", "y")) %>% layout(plot_bgcolor="transparent", paper_bgcolor="transparent")
+    scen_id <- paste("Scénario", length(scenarios_rv$data) + 1)
+    scenarios_rv$data[[scen_id]] <- list(inputs = monthly_inputs(), result = result)
   })
-  
+  output$monthly_saved <- renderUI({
+    if (!length(scenarios_rv$data)) return(p("Aucune comparaison ajoutée. La simulation courante reste affichée."))
+    tagList(lapply(names(scenarios_rv$data), function(name) {
+      saved <- scenarios_rv$data[[name]]; x <- saved$inputs; r <- saved$result
+      tags$div(h5(name), p(paste0(
+        monthly_fmt(x$vol), " entrées/mois ; ", monthly_fmt(x$ps, 1), " % acceptés ; manuel ", monthly_fmt(x$time_h, 1), " min/résultat ; ",
+        money(x$cost_h, 2), "/h ; C1 ", money(x$cost_c1_month), "/mois ; C2 ", money(x$cost_orch), "/mois ; C3 ", monthly_fmt(x$maint_h, 1), " h/mois ; ",
+        "investissement dispositif ", money(x$build_ia), ", manuel ", money(x$build_manual), " ; répartition ", monthly_fmt(x$amort_months), " mois ; projection ", monthly_fmt(x$projection_months), " mois.")),
+        p(paste0("Courant : ", money(r$current), "/mois ; analytique : ", money(r$analytical), "/mois ; ", money(r$analytical_per_accepted, 2), "/résultat accepté.")))
+    }))
+  })
+  comparison_data <- reactive({
+    r <- monthly_result()
+    validate(need(r$accepted > 0, "Aucun résultat accepté : comparaison par résultat non définie."))
+    row <- function(label, result) data.frame(
+      Scenario = label, Type = c("Manuel analytique", "Dispositif courant", "Dispositif analytique"),
+      Cout = c(result$manual_per_accepted, result$current_per_accepted, result$analytical_per_accepted))
+    current <- row("Simulation courante", r)
+    saved <- lapply(names(scenarios_rv$data), function(name) row(name, scenarios_rv$data[[name]]$result))
+    bind_rows(c(list(current), saved))
+  })
+  output$plot_ctask <- renderPlotly({
+    df <- comparison_data()
+    df$Type <- factor(df$Type, levels = c("Manuel analytique", "Dispositif courant", "Dispositif analytique"))
+    df$Scenario <- factor(df$Scenario, levels = unique(df$Scenario))
+    plot_ly(df, x = ~Scenario, y = ~Cout, color = ~Type,
+      colors = c("#FFFFFF", "#779FCB", "#D4850F"), type = "bar",
+      text = vapply(df$Cout, money, character(1), digits = 2),
+      textposition = "outside", cliponaxis = FALSE,
+      textfont = list(color = "white", size = 14),
+      hovertemplate = "%{x}<br>%{fullData.name} : %{y:.2f} €<extra></extra>") %>% layout(
+        barmode = "group", bargap = .3,
+        font = list(color = "white", family = "system-ui, sans-serif"),
+        plot_bgcolor = "transparent", paper_bgcolor = "transparent",
+        xaxis = list(title = "", categoryorder = "array", categoryarray = levels(df$Scenario)),
+        yaxis = list(title = "€ par résultat accepté", range = c(0, max(1, max(df$Cout) * 1.25))),
+        legend = list(orientation = "h", x = 0, y = -.3, title = list(text = "")),
+        margin = list(b = 95, t = 30, l = 65, r = 20)) %>%
+      config(displayModeBar = FALSE)
+
+  })
+  monthly_projection <- reactive({
+    r <- monthly_result()
+    validate(need(r$accepted > 0, "Aucun résultat accepté : projection comparative non définie."))
+    compute_monthly_projection(monthly_inputs(), r)
+  })
   output$plot_roi <- renderPlotly({
-    df_roi <- compute_roi(cost_manual_task(), cost_ia_task(), input$vol * input$ps / 100, input$build_ia, input$build_manual)
-    
-    p <- ggplot(df_roi, aes(x = Mois, y = Cout_Cumule, color = Type)) +
-      geom_line(linewidth = 1.5) +
-      geom_point(size = 3) +
-      scale_color_manual(values = c("Manuel" = "#FFFFFF", "Agent IA" = "#D4850F")) +
-      scale_x_continuous(breaks = 1:12) +
-      labs(y = "Coût Cumulé (€)", x = "Mois") +
-      theme_minimal(base_size = 14) +
-      theme(
+    df <- monthly_projection()
+    df$Type[df$Type == "Agent IA"] <- "Dispositif"
+    p <- ggplot(df, aes(x = Mois, y = Cout_Cumule, color = Type)) +
+      geom_line(linewidth = 1.2) + geom_point(size = 2) +
+      scale_color_manual(values = c("Manuel" = "#FFFFFF", "Dispositif" = "#D4850F")) +
+      scale_x_continuous(breaks = 0:monthly_inputs()$projection_months) +
+      labs(y = "Coût cumulé (€)", x = "Mois — 0 : investissement initial", color = NULL) +
+      theme_minimal(base_size = 13) + theme(
         panel.background = element_rect(fill = "transparent", color = NA),
         plot.background = element_rect(fill = "transparent", color = NA),
-        text = element_text(color = "white"),
-        axis.text = element_text(color = "white"),
-        legend.position = "bottom",
-        legend.title = element_blank()
-      )
-    ggplotly(p, tooltip = c("x", "y")) %>% layout(
-      plot_bgcolor="transparent", 
-      paper_bgcolor="transparent",
-      legend = list(orientation = "h", x = 0.5, y = -0.3, xanchor = "center", title = list(text = "")),
-      margin = list(b = 60)
-    )
+        text = element_text(color = "white"), axis.text = element_text(color = "white"), legend.position = "bottom")
+    ggplotly(p, tooltip = c("x", "y", "color")) %>% layout(
+      plot_bgcolor = "transparent", paper_bgcolor = "transparent",
+      legend = list(orientation = "h", x = .5, y = -.3, xanchor = "center"), margin = list(b = 75))
   })
-  
+
   # -- Onglet C1 --
   
   # Chaque appel du serveur possède sa référence, ses tarifs actifs et son brouillon.

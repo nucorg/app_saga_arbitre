@@ -1,0 +1,54 @@
+{
+  "id": "veille-section-1",
+  "version": 1,
+  "title": "Veille — Section 1",
+  "period": "Un mois de croisière",
+  "currency": "EUR",
+  "inputs": {
+    "vol": 1200,
+    "ps": 100,
+    "time_h": 30,
+    "cost_h": 60,
+    "cost_c1_month": 600,
+    "cost_orch": 2400,
+    "maint_h": 200,
+    "build_ia": 36000,
+    "amort_months": 24,
+    "build_manual": 0,
+    "projection_months": 6
+  },
+  "units": {
+    "vol": "entrées/mois",
+    "ps": "% de résultats finalement acceptés",
+    "time_h": "minutes/résultat manuel",
+    "cost_h": "EUR/h",
+    "cost_c1_month": "EUR/mois",
+    "cost_orch": "EUR/mois",
+    "maint_h": "h/mois",
+    "build_ia": "EUR",
+    "amort_months": "mois de répartition analytique",
+    "build_manual": "EUR",
+    "projection_months": "mois de projection à charge constante"
+  },
+  "expected": {
+    "accepted": 1200,
+    "c1_per_input": 0.5,
+    "c1": 600,
+    "c2": 2400,
+    "c3": 12000,
+    "current": 15000,
+    "allocation": 1500,
+    "analytical": 16500,
+    "current_per_accepted": 12.5,
+    "analytical_per_accepted": 13.75,
+    "manual_current": 36000,
+    "manual_analytical": 36000,
+    "manual_per_accepted": 30
+  },
+  "notes": [
+    "C1 et C2 sont des montants mensuels saisis : une variation de volume ne les redimensionne pas automatiquement.",
+    "Le coût horaire est commun aux deux modes.",
+    "Les 24 mois de répartition ne sont pas l’horizon T.",
+    "La projection constante ne reproduit pas le CTP avec calibrage du cours."
+  ]
+}

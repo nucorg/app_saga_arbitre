@@ -1,0 +1,114 @@
+{
+  "date": "2026-10-05T17:59:18.927Z",
+  "calls": [
+    {
+      "tool": "cout_tache",
+      "inputs": {
+        "c_tokens": 0.5,
+        "c_infra": 2,
+        "c_revue_humaine": 10,
+        "p_s": 1
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"c_task\":12.5}"
+          }
+        ],
+        "structuredContent": {
+          "c_task": 12.5
+        },
+        "isError": false
+      }
+    },
+    {
+      "tool": "cout_tache",
+      "inputs": {
+        "c_tokens": 0.5,
+        "c_infra": 2,
+        "c_revue_humaine": 10,
+        "p_s": 0.8
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"c_task\":15.625}"
+          }
+        ],
+        "structuredContent": {
+          "c_task": 15.625
+        },
+        "isError": false
+      }
+    },
+    {
+      "tool": "cout_tache",
+      "inputs": {
+        "c_tokens": 0.5,
+        "c_infra": 2,
+        "c_revue_humaine": 15,
+        "p_s": 1
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"c_task\":17.5}"
+          }
+        ],
+        "structuredContent": {
+          "c_task": 17.5
+        },
+        "isError": false
+      }
+    },
+    {
+      "tool": "cout_tache",
+      "inputs": {
+        "c_tokens": 1,
+        "c_infra": 4,
+        "c_revue_humaine": 20,
+        "p_s": 1
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"c_task\":25}"
+          }
+        ],
+        "structuredContent": {
+          "c_task": 25
+        },
+        "isError": false
+      }
+    },
+    {
+      "tool": "roi_point_mort",
+      "inputs": {
+        "cost_manual": 30,
+        "cost_agent": 12.5,
+        "volume_mensuel": 1200,
+        "build_initial_ia": 36000,
+        "build_initial_manual": 0
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"point_mort_mois\":2,\"cumul_m12_manuel\":432000,\"cumul_m12_agent\":216000,\"economie_m12\":216000}"
+          }
+        ],
+        "structuredContent": {
+          "point_mort_mois": 2,
+          "cumul_m12_manuel": 432000,
+          "cumul_m12_agent": 216000,
+          "economie_m12": 216000
+        },
+        "isError": false
+      }
+    }
+  ]
+}

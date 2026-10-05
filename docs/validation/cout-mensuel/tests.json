@@ -1,0 +1,302 @@
+[
+  {
+    "file": "test-logic_maths.R",
+    "test": "compute_cost fonctionne correctement",
+    "nb": 2,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 2
+  },
+  {
+    "file": "test-logic_maths.R",
+    "test": "compute_roi retourne le dataframe attendu",
+    "nb": 4,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 4
+  },
+  {
+    "file": "test-logic_maths.R",
+    "test": "compute_ctp_totals correspond a l'exemple theorique M2",
+    "nb": 4,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 4
+  },
+  {
+    "file": "test-logic_maths.R",
+    "test": "compute_ctp_monthly produit le bon dataframe et le Genou du mois 3",
+    "nb": 4,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 4
+  },
+  {
+    "file": "test-logic_maths.R",
+    "test": "compute_c1_usd et compute_c1_eur calculent l'inférence correctement",
+    "nb": 2,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 2
+  },
+  {
+    "file": "test-logic_maths.R",
+    "test": "compute_equivalent_tokens applique bien l'abattement du cache contextuel",
+    "nb": 2,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 2
+  },
+  {
+    "file": "test-logic_maths.R",
+    "test": "compute_equivalent_tokens_unit divise correctement par le volume",
+    "nb": 3,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 3
+  },
+  {
+    "file": "test-logic_maths.R",
+    "test": "compute_c2_maths dissocie correctement Fixe et Variable selon la Taxonomie",
+    "nb": 4,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 4
+  },
+  {
+    "file": "test-logic_maths.R",
+    "test": "compute_h2_cruise calcule correctement les heures d'escalade mensuelles",
+    "nb": 3,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 3
+  },
+  {
+    "file": "test-logic_monthly.R",
+    "test": "le scénario versionné reproduit la lecture mensuelle du cours",
+    "nb": 13,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 13
+  },
+  {
+    "file": "test-logic_monthly.R",
+    "test": "volume et acceptation changent les ratios, pas les budgets saisis",
+    "nb": 9,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 9
+  },
+  {
+    "file": "test-logic_monthly.R",
+    "test": "charge humaine, investissement et répartition sont indépendants",
+    "nb": 5,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 5
+  },
+  {
+    "file": "test-logic_monthly.R",
+    "test": "projection compte une seule fois l'investissement, à six ou douze mois",
+    "nb": 6,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 6
+  },
+  {
+    "file": "test-logic_monthly.R",
+    "test": "zéro acceptation et paramètres invalides ne donnent pas de faux ratios",
+    "nb": 14,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 14
+  },
+  {
+    "file": "test-logic_monthly.R",
+    "test": "Shiny conserve les hypothèses et la simulation courante après ajout",
+    "nb": 15,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 15
+  },
+  {
+    "file": "test-logic_parsers.R",
+    "test": "l'export et l'import préservent accents, virgules, guillemets et valeurs absentes",
+    "nb": 1,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 1
+  },
+  {
+    "file": "test-logic_parsers.R",
+    "test": "l'import accepte UTF-8 BOM, point-virgule et virgule décimale",
+    "nb": 6,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 6
+  },
+  {
+    "file": "test-logic_parsers.R",
+    "test": "un CSV valide sans saut de ligne final reste lisible",
+    "nb": 1,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 1
+  },
+  {
+    "file": "test-logic_parsers.R",
+    "test": "les identifiants vides ou ambigus et les schémas invalides sont refusés",
+    "nb": 8,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 8
+  },
+  {
+    "file": "test-logic_parsers.R",
+    "test": "les prix sont finis et non négatifs, seuls les prix cache peuvent manquer",
+    "nb": 15,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 15
+  },
+  {
+    "file": "test-logic_parsers.R",
+    "test": "les dates impossibles ou au mauvais format sont refusées",
+    "nb": 4,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 4
+  },
+  {
+    "file": "test-logic_parsers.R",
+    "test": "un fichier malformé ne peut pas produire un catalogue silencieusement tronqué",
+    "nb": 5,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 5
+  },
+  {
+    "file": "test-logic_parsers.R",
+    "test": "la lecture de la référence conserve la compatibilité historique",
+    "nb": 5,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 5
+  },
+  {
+    "file": "test-server.R",
+    "test": "l'interface conserve les six pages publiques sans les pages terrain",
+    "nb": 14,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 14
+  },
+  {
+    "file": "test-server.R",
+    "test": "Shiny conserve effort humain complet et C2 détaillé",
+    "nb": 2,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 2
+  },
+  {
+    "file": "test-server.R",
+    "test": "L'ajout et la suppression de modèles fonctionnent dans l'onglet Prix API",
+    "nb": 5,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 5
+  },
+  {
+    "file": "test-server.R",
+    "test": "appliquer et rétablir les tarifs ne modifient jamais le CSV de référence",
+    "nb": 10,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 10
+  },
+  {
+    "file": "test-server.R",
+    "test": "l'import prépare le brouillon et refuse un fichier invalide sans perdre les tarifs",
+    "nb": 9,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 9
+  },
+  {
+    "file": "test-server.R",
+    "test": "une édition invalide et la suppression du dernier modèle laissent la table intacte",
+    "nb": 9,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 9
+  },
+  {
+    "file": "test-server.R",
+    "test": "deux sessions simultanées ont des catalogues indépendants",
+    "nb": 9,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 9
+  }
+]

@@ -1,4 +1,5 @@
 source("../../R/logic_maths.R")
+source("../../R/logic_monthly.R")
 source("../../R/logic_parsers.R")
 source("../../R/server.R")
 source("../../R/ui.R")
@@ -12,7 +13,7 @@ test_that("l'interface conserve les six pages publiques sans les pages terrain",
     expect_true(grepl(label, html, fixed = TRUE), info = label)
   expect_length(gregexpr('data-bs-toggle="tab"', html, fixed = TRUE)[[1]], 6)
   for (removed in c("case_preset", "telemetry_confirm", "process_logs",
-                    "Cas M1", "Télémétrie du Terrain"))
+                    "Cas M1", "Télémétrie du Terrain", "télémétrie"))
     expect_false(grepl(removed, html, fixed = TRUE), info = removed)
   expect_match(html, "c3_governance")
 })

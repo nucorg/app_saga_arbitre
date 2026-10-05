@@ -82,6 +82,24 @@ saga_ui <- function() {
           color: #FFAE42 !important;
         }
 
+        .monthly-workspace, .monthly-sidebar { font-family: Inter, system-ui, sans-serif; }
+        .monthly-sidebar { font-size: .9rem; }
+        .monthly-sidebar h5 { margin-top: .9rem; margin-bottom: .2rem; }
+        .monthly-workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; min-width: 0; }
+        .monthly-workspace .card { flex: none; }
+        .monthly-workspace > * { min-width: 0; }
+        #monthly_breakdown { overflow-x: auto; }
+        .monthly-workspace h3 { margin-bottom: 0; }
+        .monthly-metrics { display: flex; flex-wrap: wrap; gap: 1rem; }
+        .monthly-metric { flex: 1 1 180px; padding: .8rem; border-left: 3px solid #D4850F; }
+        .monthly-metric strong { display: block; white-space: nowrap; font-size: 1.6rem; color: #FFAE42; }
+        .monthly-details { padding: 1rem; border: 1px solid #67798c; border-radius: .5rem; }
+        .monthly-details summary { cursor: pointer; font-weight: 600; }
+        .monthly-details[open] summary { margin-bottom: 1rem; }
+        .monthly-workspace td, .monthly-workspace th { vertical-align: middle; }
+        .monthly-workspace .table { --bs-table-bg: transparent; --bs-table-color: #fff; }
+        .monthly-workspace .table tr:last-child { font-weight: 700; }
+        .monthly-number { white-space: nowrap; }
         /* Formulaires, valeurs et typographie */
         .shiny-input-container label, .control-label, .form-group label { color: #FFFFFF !important; }
         input, select, .form-control { 
@@ -103,26 +121,60 @@ saga_ui <- function() {
     
     nav_panel("Manuel vs Agentique",
       layout_sidebar(
+        fillable = FALSE, fill = FALSE,
         sidebar = sidebar(
-          title = "Paramètres de la Tâche",
-          numericInput("vol", "Volume entrant mensuel :", value = 50, min = 1),
-          numericInput("time_h", "Temps unitaire manuel (min) :", value = 15, min = 1),
-          numericInput("cost_h", "Coût humain conventionnel (€/h) :", value = 15, min = 1),
-          numericInput("cost_tokens", "C\u2081 : Co\u00fbt des tokens par t\u00e2che :", value = 0.05, min = 0, step = 0.01),
-          numericInput("cost_orch", "C\u2082 : Orchestration mensuelle (\u20ac) :", value = 0, min = 0),
-          numericInput("maint_h", "C\u2083 : Maintenance IA mensuelle (heures) :", value = 2, min = 0),
-          sliderInput("ps", HTML("Taux de succ\u00e8s (P<sub>s</sub>) % :"), min = 1, max = 100, value = 90),
-          numericInput("build_ia", "Investissement initial Agentique (\u20ac) :", value = 1200, min = 0),
-          numericInput("build_manual", "Investissement initial Manuel (\u20ac) :", value = 0, min = 0),
-          actionButton("add_scen", "Sauvegarder Scénario", class = "btn-primary")
+          title = "Votre mois de référence", width = 370,
+          class = "monthly-sidebar", gap = "0.5rem", padding = "1rem",
+          actionButton("load_monthly_example", "Charger l’exemple — Veille, Section 1", class = "btn-primary"),
+          helpText("Le chargement remplace les paramètres de cet onglet. Ils restent modifiables."),
+          h5("1. Activité"),
+          numericInput("vol", "Nombre d’entrées à traiter par mois", value = 50, min = 1),
+          numericInput("ps", "Part des résultats finalement acceptés (%)", value = 90, min = 0, max = 100),
+          helpText("Après les éventuelles reprises, et non au premier essai."),
+          h5("2. Référence manuelle"),
+          numericInput("time_h", "Temps de traitement manuel par résultat (minutes)", value = 15, min = 0),
+          numericInput("cost_h", "Coût horaire humain de référence (€/h)", value = 15, min = 0),
+          helpText("Coût horaire commun au manuel et au travail humain avec le dispositif."),
+          h5("3. Dispositif"),
+          numericInput("cost_c1_month", "C1 — Utilisation des modèles (€/mois)", value = 2.5, min = 0, step = 0.01),
+          textOutput("monthly_c1_hint"),
+          helpText("Ce montant inclut les nouvelles tentatives. Il reste fixe si le volume change."),
+          numericInput("cost_orch", "C2 — Infrastructure logicielle (€/mois)", value = 0, min = 0),
+          helpText("Serveurs, orchestration, stockage, abonnements et accès aux sources. Hors investissement initial."),
+          numericInput("maint_h", "C3 — Travail humain avec le dispositif (h/mois)", value = 2, min = 0),
+          helpText("Revue, corrections, supervision et maintenance humaine."),
+          textOutput("monthly_c3_hint"),
+          h5("4. Investissement"),
+          numericInput("build_ia", "Investissement initial du dispositif (€)", value = 1200, min = 0),
+          numericInput("amort_months", "Durée de répartition analytique (mois)", value = 24, min = 1, step = 1),
+          helpText("Une convention de comparaison mensuelle ; ce n’est pas l’horizon T du CTP."),
+          tags$details(tags$summary("Paramètre complémentaire"),
+            numericInput("build_manual", "Investissement initial manuel (€)", value = 0, min = 0),
+            helpText("Même durée de répartition analytique pour les deux modes.")),
+          actionButton("add_scen", "Ajouter à la comparaison — session"),
+          helpText("Les hypothèses sont conservées pendant cette session uniquement.")
         ),
-        card(
-          card_header(HTML("Comparatif des Coûts par Tâche (C<sub>task</sub>)")),
-          plotlyOutput("plot_ctask")
-        ),
-        card(
-          card_header("Coûts cumulés à couverture finale équivalente"),
-          plotlyOutput("plot_roi")
+        tags$div(class = "monthly-workspace",
+          h3("Comparer un mois de croisière"),
+          p("Un mois de fonctionnement stabilisé, comparé au manuel pour le même nombre de résultats finalement acceptés."),
+          card(id = "monthly-result-card", full_screen = TRUE,
+            card_header("Du fonctionnement courant au coût mensuel analytique"),
+            uiOutput("monthly_summary"),
+            tableOutput("monthly_breakdown"),
+            p("La part d’investissement sert à la lecture analytique : elle ne représente pas une nouvelle dépense chaque mois.")),
+          card(card_header("Comparaison par résultat finalement accepté"),
+            conditionalPanel("input.ps > 0", plotlyOutput("plot_ctask", height = "310px")),
+            conditionalPanel("input.ps == 0", p("Aucun résultat accepté : comparaison par résultat non définie.", id = "monthly-ratio-unavailable"))),
+          tags$details(class = "monthly-details",
+            tags$summary("Hypothèses des comparaisons ajoutées à cette session"),
+            uiOutput("monthly_saved")),
+          tags$details(class = "monthly-details",
+            tags$summary("Projection cumulée à charge constante"),
+            p("Cette projection suppose une charge humaine constante. Le CTP du cours distingue calibrage et croisière."),
+            selectInput("projection_months", "Horizon de projection (mois)", choices = c("6 mois" = 6, "12 mois" = 12), selected = 6),
+            p("L’investissement est compté une seule fois au démarrage, puis seuls les coûts courants sont cumulés."),
+            conditionalPanel("input.ps > 0", plotlyOutput("plot_roi", height = "330px")),
+            conditionalPanel("input.ps == 0", p("Aucun résultat accepté : projection comparative non définie.")))
         )
       )
     ),

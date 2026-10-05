@@ -1,0 +1,21 @@
+{
+  "source_repo": "/home/boris/VIBE/projets/app_saga_terrain",
+  "source_commit": "f8e9506a06f4c082ab71b9e049cd4d62372750e3",
+  "target_repo": "/home/boris/VIBE/projets/app_saga_arbitre",
+  "target_base_commit": "2bb010bc9585b0e3fc0df8128c7c486d0ff1b39c",
+  "tests": {
+    "failed": 0,
+    "skipped": 0,
+    "error": 0,
+    "warning": 0,
+    "passed": 193,
+    "tests": 30
+  },
+  "preserved_files": {
+    "R/logic_maths.R": "50d8e6d4371f1c73bf56a9bcacdef3af51cc2e1b39fad63768468dae8118bd7a",
+    "R/logic_parsers.R": "dc76cf1edbdeb7fb987d4f057620be04642964b7cce02e89decdab4b9a9d5738",
+    "data/pricing_models.csv": "775af591fd6f30fb6fba2024069c2c94571b8aaa316d8e9332d321dc89379e7c"
+  },
+  "other_tabs_unchanged": true,
+  "deployment_configuration_unchanged": true
+}

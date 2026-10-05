@@ -1,0 +1,272 @@
+{
+  "date": "2026-10-05T17:59:29.860Z",
+  "app": "/home/boris/VIBE/projets/app_saga_arbitre/",
+  "base_commit": "2bb010bc9585b0e3fc0df8128c7c486d0ff1b39c",
+  "source_sha256": {
+    "app.R": "ee3982104eef6363afe38abed832737814abfcaa34fdd83105dd48295866a1ae",
+    "R/ui.R": "ff8afe5bcb196794dee4a90ee284bace4cdb49282515f08edacdc07e50d32a5d",
+    "R/server.R": "04c7482c8ef71cb2ccf9bcefc9faf333bf9fe5ed9cee9a03d278854360e52821",
+    "R/logic_maths.R": "50d8e6d4371f1c73bf56a9bcacdef3af51cc2e1b39fad63768468dae8118bd7a",
+    "R/logic_monthly.R": "4396ff9608bc6b9204f3bfb6de83a6f0acbded207df998682809735eaa8c5923",
+    "data/scenarios/veille-section-1.json": "afe7831afa3a2e45f672bfe077a68703f12ad77c5e9b8fdd513dcb0c100090bd"
+  },
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/154.0.8037.92",
+    "revision": "@334b65d254ccc35df4fca82706d1753227b01039",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+    "jsVersion": "15.4.80.19"
+  },
+  "capture_viewport": {
+    "width": 1440,
+    "height": 1400,
+    "deviceScaleFactor": 1
+  },
+  "crop": {
+    "x": 394,
+    "y": 191.59375,
+    "width": 1007,
+    "height": 679.984375,
+    "scale": 1
+  },
+  "observations": [
+    {
+      "case": "nominal",
+      "inputs": {
+        "vol": 1200,
+        "ps": 100,
+        "time_h": 30,
+        "cost_h": 60,
+        "cost_c1_month": 600,
+        "cost_orch": 2400,
+        "maint_h": 200,
+        "build_ia": 36000,
+        "amort_months": 24,
+        "build_manual": 0,
+        "projection_months": 6
+      },
+      "current": 15000,
+      "allocation": 1500,
+      "analytical": 16500,
+      "unitCurrent": 12.5,
+      "unitAnalytical": 13.75,
+      "text": "Du fonctionnement courant au coût mensuel analytique\n\n1 200,0 résultats finalement acceptés / mois pour 1 200,0 entrées et 100,0 % d’acceptation finale.\n\nFonctionnement courant\n15 000 €/mois\nPart d’investissement\n1 500 €/mois\nCoût mensuel analytique\n16 500 €/mois\n\nPar résultat accepté : 12,50 € courant puis 13,75 € analytique .\n\nRépartition : 36 000 € / 24 mois = 1 500 €/mois.\n\nÉcart de coûts analytiques avec le manuel : 19 500 €/mois. Cet écart n’est pas automatiquement une économie de trésorerie.\n\nPoste\tManuel (€/mois)\tDispositif (€/mois)\nC1 — Utilisation des modèles\t—\t600 €\nC2 — Infrastructure logicielle\t—\t2 400 €\nC3 — Travail humain\t36 000 €\t12 000 €\nFonctionnement courant\t36 000 €\t15 000 €\nPart mensuelle d’investissement\t0 €\t1 500 €\nCoût mensuel analytique\t36 000 €\t16 500 €\n\nLa part d’investissement sert à la lecture analytique : elle ne représente pas une nouvelle dépense chaque mois."
+    },
+    {
+      "case": "charge-humaine-300h",
+      "inputs": {
+        "vol": 1200,
+        "ps": 100,
+        "time_h": 30,
+        "cost_h": 60,
+        "cost_c1_month": 600,
+        "cost_orch": 2400,
+        "maint_h": 300,
+        "build_ia": 36000,
+        "amort_months": 24,
+        "build_manual": 0,
+        "projection_months": 6
+      },
+      "current": 21000,
+      "allocation": 1500,
+      "analytical": 22500,
+      "unitCurrent": 17.5,
+      "unitAnalytical": 18.75,
+      "text": "Du fonctionnement courant au coût mensuel analytique\n\n1 200,0 résultats finalement acceptés / mois pour 1 200,0 entrées et 100,0 % d’acceptation finale.\n\nFonctionnement courant\n21 000 €/mois\nPart d’investissement\n1 500 €/mois\nCoût mensuel analytique\n22 500 €/mois\n\nPar résultat accepté : 17,50 € courant puis 18,75 € analytique .\n\nRépartition : 36 000 € / 24 mois = 1 500 €/mois.\n\nÉcart de coûts analytiques avec le manuel : 13 500 €/mois. Cet écart n’est pas automatiquement une économie de trésorerie.\n\nPoste\tManuel (€/mois)\tDispositif (€/mois)\nC1 — Utilisation des modèles\t—\t600 €\nC2 — Infrastructure logicielle\t—\t2 400 €\nC3 — Travail humain\t36 000 €\t18 000 €\nFonctionnement courant\t36 000 €\t21 000 €\nPart mensuelle d’investissement\t0 €\t1 500 €\nCoût mensuel analytique\t36 000 €\t22 500 €\n\nLa part d’investissement sert à la lecture analytique : elle ne représente pas une nouvelle dépense chaque mois."
+    },
+    {
+      "case": "hypotheses-conservees",
+      "text": "Scénario 1\n\n1 200 entrées/mois ; 100,0 % acceptés ; manuel 30,0 min/résultat ; 60,00 €/h ; C1 600 €/mois ; C2 2 400 €/mois ; C3 200,0 h/mois ; investissement dispositif 36 000 €, manuel 0 € ; répartition 24 mois ; projection 6 mois.\n\nCourant : 15 000 €/mois ; analytique : 16 500 €/mois ; 13,75 €/résultat accepté."
+    },
+    {
+      "case": "acceptation-80pct",
+      "inputs": {
+        "vol": 1200,
+        "ps": 80,
+        "time_h": 30,
+        "cost_h": 60,
+        "cost_c1_month": 600,
+        "cost_orch": 2400,
+        "maint_h": 200,
+        "build_ia": 36000,
+        "amort_months": 24,
+        "build_manual": 0,
+        "projection_months": 6
+      },
+      "current": 15000,
+      "allocation": 1500,
+      "analytical": 16500,
+      "unitCurrent": 15.625,
+      "unitAnalytical": 17.1875,
+      "text": "Du fonctionnement courant au coût mensuel analytique\n\n960,0 résultats finalement acceptés / mois pour 1 200,0 entrées et 80,0 % d’acceptation finale.\n\nFonctionnement courant\n15 000 €/mois\nPart d’investissement\n1 500 €/mois\nCoût mensuel analytique\n16 500 €/mois\n\nPar résultat accepté : 15,62 € courant puis 17,19 € analytique .\n\nRépartition : 36 000 € / 24 mois = 1 500 €/mois.\n\nÉcart de coûts analytiques avec le manuel : 12 300 €/mois. Cet écart n’est pas automatiquement une économie de trésorerie.\n\nPoste\tManuel (€/mois)\tDispositif (€/mois)\nC1 — Utilisation des modèles\t—\t600 €\nC2 — Infrastructure logicielle\t—\t2 400 €\nC3 — Travail humain\t28 800 €\t12 000 €\nFonctionnement courant\t28 800 €\t15 000 €\nPart mensuelle d’investissement\t0 €\t1 500 €\nCoût mensuel analytique\t28 800 €\t16 500 €\n\nLa part d’investissement sert à la lecture analytique : elle ne représente pas une nouvelle dépense chaque mois."
+    },
+    {
+      "case": "projection-6mois-repartition12",
+      "traces": [
+        {
+          "x": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "y": [
+            36000,
+            51000,
+            66000,
+            81000,
+            96000,
+            111000,
+            126000
+          ],
+          "name": "Dispositif"
+        },
+        {
+          "x": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "y": [
+            0,
+            36000,
+            72000,
+            108000,
+            144000,
+            180000,
+            216000
+          ],
+          "name": "Manuel"
+        }
+      ]
+    },
+    {
+      "case": "projection-12mois",
+      "traces": [
+        {
+          "x": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "y": [
+            36000,
+            51000,
+            66000,
+            81000,
+            96000,
+            111000,
+            126000,
+            141000,
+            156000,
+            171000,
+            186000,
+            201000,
+            216000
+          ],
+          "name": "Dispositif"
+        },
+        {
+          "x": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "y": [
+            0,
+            36000,
+            72000,
+            108000,
+            144000,
+            180000,
+            216000,
+            252000,
+            288000,
+            324000,
+            360000,
+            396000,
+            432000
+          ],
+          "name": "Manuel"
+        }
+      ]
+    },
+    {
+      "case": "acceptation-nulle",
+      "text": "0,0 résultats finalement acceptés / mois pour 1 200,0 entrées et 0,0 % d’acceptation finale.\n\nFonctionnement courant\n15 000 €/mois\nPart d’investissement\n3 000 €/mois\nCoût mensuel analytique\n18 000 €/mois\n\nAucun résultat finalement accepté : les coûts mensuels restent connus, mais les coûts par résultat et la comparaison unitaire ne sont pas définis.\n\nRépartition : 36 000 € / 12 mois = 3 000 €/mois."
+    },
+    {
+      "case": "volume-invalide",
+      "text": "Vérifiez les paramètres : volume positif, acceptation entre 0 et 100 %, répartition entière positive, projection à 6 ou 12 mois."
+    },
+    {
+      "case": "onglet-public",
+      "label": "C1 - Inférence",
+      "output": "plot_c1_compare",
+      "errors": []
+    },
+    {
+      "case": "onglet-public",
+      "label": "C2 - Infra",
+      "output": "plot_c2_breakdown",
+      "errors": []
+    },
+    {
+      "case": "onglet-public",
+      "label": "C3 - Humain",
+      "output": "plot_c3_asym",
+      "errors": []
+    },
+    {
+      "case": "onglet-public",
+      "label": "Diagnostic d'Investissement (CTP)",
+      "output": "plot_ctp_line",
+      "errors": []
+    },
+    {
+      "case": "onglet-public",
+      "label": "Prix API",
+      "output": "table_pricing_edit",
+      "errors": []
+    }
+  ],
+  "layouts": [
+    {
+      "width": 1280,
+      "documentWidth": 1265,
+      "summaryWidth": 847
+    },
+    {
+      "width": 390,
+      "documentWidth": 375,
+      "summaryWidth": 327
+    }
+  ]
+}
