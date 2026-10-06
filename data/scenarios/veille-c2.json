@@ -1,0 +1,23 @@
+{
+  "id": "veille-c2",
+  "version": 1,
+  "title": "Veille — budget mensuel C2",
+  "currency": "EUR",
+  "units": "EUR/mois",
+  "inputs": {
+    "c2_runtime": 500,
+    "c2_storage": 350,
+    "c2_observability": 300,
+    "c2_sources": 700,
+    "c2_security": 300,
+    "c2_tests": 250
+  },
+  "expected": {
+    "total": 2400
+  },
+  "notes": [
+    "Ventilation pédagogique illustrative, sans devis ni tarifs fournisseurs vérifiés.",
+    "Montants récurrents attribués au dispositif ; hors C1, travail humain C3 et investissement initial.",
+    "Aucun redimensionnement automatique avec le volume."
+  ]
+}

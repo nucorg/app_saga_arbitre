@@ -1,0 +1,387 @@
+{
+  "date": "2026-10-06T12:50:38.515Z",
+  "app": "/home/boris/VIBE/projets/app_saga_arbitre/",
+  "base_commit": "aa68a9c64709a9920e9f0ed8134ff85dbeaf2a6d",
+  "source_sha256": {
+    "R/logic_infra.R": "585af8540b0e088017d46bc91f90df26dcf26595076a12ffee903cfece0bb831",
+    "R/ui.R": "f4c150ac499c01f5d16282035ac8dca62d63154c61d313857e4bf7d76bf1c90d",
+    "R/server.R": "6ee7288bb418982fac1e458e99e57fd7edc767c36feac68aab1404e75e21c62e",
+    "app.R": "057158e0a7b7699f45c86bd436f6a823f16eabccfb5dfad68d8453091a6a7530",
+    "data/scenarios/veille-c2.json": "a311e94ddc543dc9c1fe5685698ec4bd29b4f559ca8d9c631d3f42a43f2331f9"
+  },
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/154.0.8037.92",
+    "revision": "@334b65d254ccc35df4fca82706d1753227b01039",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+    "jsVersion": "15.4.80.19"
+  },
+  "layouts": [
+    {
+      "width": 1280,
+      "documentWidth": 1265,
+      "cardWidth": 847
+    },
+    {
+      "width": 390,
+      "documentWidth": 375,
+      "cardWidth": 327
+    },
+    {
+      "open": true,
+      "width": 390,
+      "documentWidth": 375
+    },
+    {
+      "open": false,
+      "width": 390,
+      "documentWidth": 375
+    }
+  ],
+  "tabs": [
+    "Manuel vs Agentique",
+    "C1 - Inférence",
+    "C2 - Infra",
+    "C3 - Humain",
+    "Diagnostic d'Investissement (CTP)",
+    "Prix API"
+  ],
+  "observations": [
+    {
+      "case": "budget-inconnu",
+      "inputs": {
+        "c2_runtime": "",
+        "c2_storage": "",
+        "c2_observability": "",
+        "c2_sources": "",
+        "c2_security": "",
+        "c2_tests": ""
+      },
+      "total": null,
+      "status": "Budget à compléter — 0 postes renseignés sur 6",
+      "monthly": "0",
+      "ctp": "218",
+      "ctpDetailed": true,
+      "kappa": "1",
+      "activeTab": "C2 - Infra",
+      "buttons": [
+        {
+          "id": "c2_to_monthly",
+          "disabled": true
+        },
+        {
+          "id": "c2_to_ctp",
+          "disabled": true
+        }
+      ]
+    },
+    {
+      "case": "un-poste-nul-cinq-inconnus",
+      "inputs": {
+        "c2_runtime": "0",
+        "c2_storage": "",
+        "c2_observability": "",
+        "c2_sources": "",
+        "c2_security": "",
+        "c2_tests": ""
+      },
+      "total": null,
+      "status": "Budget à compléter — 1 poste renseigné sur 6",
+      "monthly": "0",
+      "ctp": "218",
+      "ctpDetailed": true,
+      "kappa": "1",
+      "activeTab": "C2 - Infra",
+      "buttons": [
+        {
+          "id": "c2_to_monthly",
+          "disabled": true
+        },
+        {
+          "id": "c2_to_ctp",
+          "disabled": true
+        }
+      ]
+    },
+    {
+      "case": "exemple-2400",
+      "inputs": {
+        "c2_runtime": "500",
+        "c2_storage": "350",
+        "c2_observability": "300",
+        "c2_sources": "700",
+        "c2_security": "300",
+        "c2_tests": "250"
+      },
+      "total": "2400",
+      "status": null,
+      "monthly": "2400",
+      "ctp": "2400",
+      "ctpDetailed": false,
+      "kappa": "4",
+      "activeTab": "C2 - Infra",
+      "buttons": [
+        {
+          "id": "c2_to_monthly",
+          "disabled": false
+        },
+        {
+          "id": "c2_to_ctp",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "case": "report-ctp-sans-majoration",
+      "inputs": {
+        "c2_runtime": "500",
+        "c2_storage": "350",
+        "c2_observability": "300",
+        "c2_sources": "700",
+        "c2_security": "300",
+        "c2_tests": "250"
+      },
+      "total": "2400",
+      "status": null,
+      "monthly": "2400",
+      "ctp": "2400",
+      "ctpDetailed": true,
+      "kappa": "1",
+      "activeTab": "Diagnostic d'Investissement (CTP)",
+      "buttons": [
+        {
+          "id": "c2_to_monthly",
+          "disabled": false
+        },
+        {
+          "id": "c2_to_ctp",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "case": "report-mensuel",
+      "inputs": {
+        "c2_runtime": "500",
+        "c2_storage": "350",
+        "c2_observability": "300",
+        "c2_sources": "700",
+        "c2_security": "300",
+        "c2_tests": "250"
+      },
+      "total": "2400",
+      "status": null,
+      "monthly": "2400",
+      "ctp": "2400",
+      "ctpDetailed": true,
+      "kappa": "1",
+      "activeTab": "Manuel vs Agentique",
+      "buttons": [
+        {
+          "id": "c2_to_monthly",
+          "disabled": false
+        },
+        {
+          "id": "c2_to_ctp",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "case": "centimes-sans-synchronisation",
+      "inputs": {
+        "c2_runtime": "500",
+        "c2_storage": "350",
+        "c2_observability": "300",
+        "c2_sources": "710.25",
+        "c2_security": "300",
+        "c2_tests": "250"
+      },
+      "total": "2410.25",
+      "status": null,
+      "monthly": "2400",
+      "ctp": "2400",
+      "ctpDetailed": true,
+      "kappa": "1",
+      "activeTab": "C2 - Infra",
+      "buttons": [
+        {
+          "id": "c2_to_monthly",
+          "disabled": false
+        },
+        {
+          "id": "c2_to_ctp",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "case": "report-des-centimes",
+      "inputs": {
+        "c2_runtime": "500",
+        "c2_storage": "350",
+        "c2_observability": "300",
+        "c2_sources": "710.25",
+        "c2_security": "300",
+        "c2_tests": "250"
+      },
+      "total": "2410.25",
+      "status": null,
+      "monthly": "2410.25",
+      "ctp": "2400",
+      "ctpDetailed": true,
+      "kappa": "1",
+      "activeTab": "Manuel vs Agentique",
+      "buttons": [
+        {
+          "id": "c2_to_monthly",
+          "disabled": false
+        },
+        {
+          "id": "c2_to_ctp",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "case": "montant-negatif",
+      "inputs": {
+        "c2_runtime": "500",
+        "c2_storage": "350",
+        "c2_observability": "300",
+        "c2_sources": "-1",
+        "c2_security": "300",
+        "c2_tests": "250"
+      },
+      "total": null,
+      "status": "Budget à compléter — 5 postes renseignés sur 6",
+      "monthly": "2410.25",
+      "ctp": "2400",
+      "ctpDetailed": true,
+      "kappa": "1",
+      "activeTab": "C2 - Infra",
+      "buttons": [
+        {
+          "id": "c2_to_monthly",
+          "disabled": true
+        },
+        {
+          "id": "c2_to_ctp",
+          "disabled": true
+        }
+      ]
+    },
+    {
+      "case": "effacement",
+      "inputs": {
+        "c2_runtime": "",
+        "c2_storage": "",
+        "c2_observability": "",
+        "c2_sources": "",
+        "c2_security": "",
+        "c2_tests": ""
+      },
+      "total": null,
+      "status": "Budget à compléter — 0 postes renseignés sur 6",
+      "monthly": "2410.25",
+      "ctp": "2400",
+      "ctpDetailed": true,
+      "kappa": "1",
+      "activeTab": "C2 - Infra",
+      "buttons": [
+        {
+          "id": "c2_to_monthly",
+          "disabled": true
+        },
+        {
+          "id": "c2_to_ctp",
+          "disabled": true
+        }
+      ]
+    },
+    {
+      "case": "budget-explicitement-nul",
+      "inputs": {
+        "c2_runtime": "0",
+        "c2_storage": "0",
+        "c2_observability": "0",
+        "c2_sources": "0",
+        "c2_security": "0",
+        "c2_tests": "0"
+      },
+      "total": "0",
+      "status": null,
+      "monthly": "2410.25",
+      "ctp": "2400",
+      "ctpDetailed": true,
+      "kappa": "1",
+      "activeTab": "C2 - Infra",
+      "buttons": [
+        {
+          "id": "c2_to_monthly",
+          "disabled": false
+        },
+        {
+          "id": "c2_to_ctp",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "case": "report-budget-nul",
+      "inputs": {
+        "c2_runtime": "0",
+        "c2_storage": "0",
+        "c2_observability": "0",
+        "c2_sources": "0",
+        "c2_security": "0",
+        "c2_tests": "0"
+      },
+      "total": "0",
+      "status": null,
+      "monthly": "2410.25",
+      "ctp": "0",
+      "ctpDetailed": true,
+      "kappa": "1",
+      "activeTab": "Diagnostic d'Investissement (CTP)",
+      "buttons": [
+        {
+          "id": "c2_to_monthly",
+          "disabled": false
+        },
+        {
+          "id": "c2_to_ctp",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "case": "report-au-clavier",
+      "inputs": {
+        "c2_runtime": "500",
+        "c2_storage": "350",
+        "c2_observability": "300",
+        "c2_sources": "700",
+        "c2_security": "300",
+        "c2_tests": "250"
+      },
+      "total": "2400",
+      "status": null,
+      "monthly": "2400",
+      "ctp": "0",
+      "ctpDetailed": true,
+      "kappa": "1",
+      "activeTab": "Manuel vs Agentique",
+      "buttons": [
+        {
+          "id": "c2_to_monthly",
+          "disabled": false
+        },
+        {
+          "id": "c2_to_ctp",
+          "disabled": false
+        }
+      ]
+    }
+  ]
+}

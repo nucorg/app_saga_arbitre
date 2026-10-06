@@ -5,9 +5,9 @@ Application R/Shiny. Les résultats dépendent de données et conventions explic
 ## Parcours
 
 - **Manuel vs Agentique** : comparaison d’un mois de croisière, coûts courants et analytiques distincts, puis coûts par résultat finalement accepté. C1 et C2 sont saisis en EUR/mois ; C3 en heures mensuelles valorisées au coût horaire commun. La projection constante est secondaire et indépendante de la répartition analytique (voir ci-dessous).
-- **C1** : simulation au catalogue de référence ou aux tarifs personnels appliqués à la session et conversion USD/EUR explicite.
-- **C2** : frais non humains fixes et variables. Fixe/variable ne signifie pas CAPEX/OPEX. Les prix sont des hypothèses locales à vérifier.
-- **C3** : revue systématique, reprises additionnelles et gouvernance/entretien. Le forfait de calibrage représente tout l’effort de cette phase ; trois mois est l’hypothèse du microscope historique.
+- **C1** : comparaison de trois modèles aux tarifs actifs de la session, taille moyenne d’appel, appels par entrée et budget mensuel. Choix explicite du modèle retenu et report ponctuel vers le mensuel ou le CTP.
+- **C2** : six postes récurrents en EUR/mois, total et répartition du budget. Champs vides distincts des zéros, exemple pédagogique et report ponctuel vers le mensuel ou le CTP.
+- **C3** : heures et coûts humains en calibrage et en croisière ; détail de la revue, des reprises et de la supervision. Choix de la phase pour le report mensuel ; deux phases reportées au CTP, qui conserve sa durée de calibrage.
 - **CTP** : exploitation et projet sur T (six mois par défaut), calibrage modifiable, investissement distinct et solde conventionnel par phase. Préréglage Veille/Section 1 et détail mensuel vérifiable. Les onglets restent indépendants.
 - **Prix API** : tarifs personnels par session, import/export CSV et application explicite aux calculs C1.
 
@@ -132,3 +132,38 @@ Voir le dossier [audit documentaire M1](../../KNOWLEDGE/SAGA-IA/M1/AUDIT_H4E/RAP
 ## Report du parcours mensuel — 2026-10-05
 
 Report ciblé depuis `app_saga_terrain`, commit `f8e9506a06f4c082ab71b9e049cd4d62372750e3`. Seuls le premier onglet, ses styles, son module, son scénario et ses tests sont repris. Aucun ajout des pages internes. Les autres onglets, le catalogue de référence et la configuration de déploiement sont préservés. Voir [la validation et le rejeu](docs/validation/cout-mensuel/notice.md).
+
+## C2 — Budget mensuel par poste
+
+L’onglet C2 - Infra construit un budget à partir de six montants mensuels en euros.
+Les champs vides restent inconnus ; saisir zéro pour un poste nul. Le total n’est
+disponible qu’après saisie complète et valide. L’exemple `data/scenarios/veille-c2.json`
+totalise 2 400 €/mois : il s’agit d’une ventilation pédagogique, pas de tarifs fournisseurs.
+
+Les boutons de report remplacent uniquement C2 dans la destination choisie et
+ouvrent son onglet. Dans le CTP, le report sélectionne le total déjà évalué et
+remet le coefficient à 1. Les modifications suivantes ne sont pas synchronisées :
+il faut reporter à nouveau. Charger d’abord l’exemple de la destination pour une
+démonstration complète du cours, puis y reporter un budget personnalisé depuis C2.
+Effacer les montants C2 ne modifie pas les destinations. Les données restent propres
+à la session ; aucun import/export de budget n’est proposé.
+
+`data/pricing_infra.csv` est une référence historique non chargée par l’application.
+Les tarifs API de C1 restent indépendants. Les montants C2 excluent l’investissement,
+les appels aux modèles et le temps humain.
+
+Voir [la validation et les commandes de rejeu C2](docs/validation/c2/notice.md).
+
+## C1 et C3 — estimations et reports explicites
+
+C1 reporte seulement le budget mensuel du modèle A, B ou C retenu. L’estimation
+utilise le volume d’entrées et le nombre moyen d’appels par entrée, nouvelles
+tentatives comprises. Le volume de la destination reste inchangé.
+
+C3 reporte les heures de la phase choisie et le coût horaire vers Manuel vs Agentique.
+Ce coût horaire est commun au manuel et au dispositif. Vers le CTP, les deux charges
+mensuelles et le taux horaire sont reportés ; la durée du calibrage et l’horizon sont
+conservés. Une saisie incomplète ou invalide bloque le report. Les onglets ne sont
+pas synchronisés après une modification : cliquer à nouveau pour reporter.
+
+Voir [les hypothèses, captures, tests et commandes de rejeu C1/C3](docs/validation/c1-c3/notice.md).

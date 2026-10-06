@@ -93,7 +93,7 @@ try {
   const expectedTabs = ['Manuel vs Agentique','C1 - Inférence','C2 - Infra','C3 - Humain',"Diagnostic d'Investissement (CTP)",'Prix API'];
   assert(JSON.stringify(tabs) === JSON.stringify(expectedTabs), 'Navigation publique divergente');
   await c.call('Emulation.setDeviceMetricsOverride', {width:1440,height:1400,deviceScaleFactor:1,mobile:false});
-  const outputs = {'C1 - Inférence':'plot_c1_compare','C2 - Infra':'plot_c2_breakdown','C3 - Humain':'plot_c3_asym',"Diagnostic d'Investissement (CTP)":'plot_ctp_line','Prix API':'table_pricing_edit'};
+  const outputs = {'C1 - Inférence':'plot_c1_compare','C2 - Infra':'c2_budget','C3 - Humain':'c3_summary',"Diagnostic d'Investissement (CTP)":'ctp_summary','Prix API':'table_pricing_edit'};
   for (const [label,id] of Object.entries(outputs)) {
     await c.evaluate(`Array.from(document.querySelectorAll('a.nav-link')).find(e=>e.textContent.trim()===${JSON.stringify(label)}).click()`);
     await settled(`document.getElementById(${JSON.stringify(id)})?.innerHTML.length > 0`);

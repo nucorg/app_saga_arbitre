@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-06",
+  "scope": "Contrôle des calculs mensuels et CTP après report de C2. Le budget à six postes est contrôlé par les tests R.",
+  "checks": [
+    {
+      "id": "cout_mensuel",
+      "tool": "mcp__saga_maths__cout_tache",
+      "args": {
+        "c_tokens": 0.5,
+        "c_infra": 2,
+        "c_revue_humaine": 10,
+        "p_s": 1
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"c_task\":12.5}"
+          }
+        ],
+        "structuredContent": {
+          "c_task": 12.5
+        },
+        "isError": false
+      }
+    },
+    {
+      "id": "ctp_nominal",
+      "tool": "mcp__saga_maths__ctp_horizon",
+      "args": {
+        "c": 0.5,
+        "c_orch": 2400,
+        "h1": 300,
+        "h2": 200,
+        "kappa": 1,
+        "t_horizon": 6,
+        "v": 1200,
+        "w": 60,
+        "detail": "totaux"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"totaux\":{\"C1\":3600,\"C2\":14400,\"C3\":90000,\"CTP\":108000}}"
+          }
+        ],
+        "structuredContent": {
+          "totaux": {
+            "C1": 3600,
+            "C2": 14400,
+            "C3": 90000,
+            "CTP": 108000
+          }
+        },
+        "isError": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "c3-estimation",
+  "version": 1,
+  "inputs": {
+    "c3_v": 1200,
+    "c3_w": 60,
+    "c3_h1_input": 300,
+    "c3_escalade": 20,
+    "c3_t_reprise": 15,
+    "c3_review": 5,
+    "c3_governance": 40
+  },
+  "expected": {
+    "h1": 300,
+    "h2": 200,
+    "calibrage_monthly": 18000,
+    "croisiere_monthly": 12000
+  },
+  "notes": [
+    "Hypothèses pédagogiques du scénario Veille, à remplacer par les temps observés.",
+    "La durée du calibrage et l’horizon sont réglés dans le CTP ; le report ne les modifie pas."
+  ]
+}

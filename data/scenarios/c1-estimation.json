@@ -1,0 +1,23 @@
+{
+  "id": "c1-estimation",
+  "version": 1,
+  "inputs": {
+    "c1_n_in": 8000,
+    "c1_n_out": 1500,
+    "c1_usd_eur": 0.88,
+    "c1_v": 1200,
+    "c1_calls": 2,
+    "c1_mod_a": "GPT-5 Mini",
+    "c1_mod_b": "GPT-5",
+    "c1_mod_c": "Claude Haiku 4.5",
+    "c1_selected": "A"
+  },
+  "reference_expected": {
+    "per_call": 0.0044,
+    "monthly": 10.56
+  },
+  "notes": [
+    "Illustration avec le catalogue de référence du 27 septembre 2026 ; les tarifs actifs de la session peuvent modifier le résultat.",
+    "Une taille moyenne d’appel, un seul modèle retenu ; tous les appels et nouvelles tentatives sont inclus dans la moyenne."
+  ]
+}

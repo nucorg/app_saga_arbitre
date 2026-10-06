@@ -17,6 +17,7 @@ saga_ui <- function() {
   }
 
   page_navbar(
+    id = "saga_nav",
     title = tags$span(
       tags$img(
         src = logo_src,
@@ -101,6 +102,27 @@ saga_ui <- function() {
         .monthly-workspace .table tr:last-child { font-weight: 700; }
         #ctp_balance_table tr:last-child, #ctp_monthly_table tr:last-child { font-weight: normal; }
         .monthly-number { white-space: nowrap; }
+
+        .saga-c2-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+        .saga-c2-actions .btn { white-space: normal; text-align: left; max-width: 100%; }
+        .saga-c2-actions .btn, #clear_c2 { color: #FFFFFF; border-color: #D4850F; background: transparent; }
+        .saga-c2-actions .btn:hover:not(:disabled), #clear_c2:hover { color: #091F35; background: #D4850F; }
+        .saga-c2-actions .btn:disabled { opacity: .5; }
+        .saga-c2-metric { flex: 0 0 auto; }
+        .saga-c2-note { font-size: .9rem; }
+        .saga-component-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+        .saga-component-actions .btn { color: #FFFFFF; border-color: #D4850F; background: transparent; white-space: normal; text-align: left; max-width: 100%; }
+        .saga-component-actions .btn:hover:not(:disabled) { color: #091F35; background: #D4850F; }
+        .saga-component-actions .btn:disabled { opacity: .5; }
+        .saga-component-note { font-size: .9rem; }
+        #c1_selected input[type=radio]:checked, #c3_monthly_phase input[type=radio]:checked { background-color: #FFAE42 !important; }
+        .saga-component-actions .btn:focus-visible, #c1_selected input:focus-visible, #c3_monthly_phase input:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 3px; }
+        #table_c1_pricing { overflow-x: auto; }
+        .saga-c2-bars { list-style: none; margin: 0; padding: 0; }
+        .saga-c2-bars li { margin-bottom: 1rem; }
+        .saga-c2-bar-label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .3rem .8rem; }
+        .saga-c2-track { background: #263c55; height: .55rem; margin-top: .3rem; border-radius: .25rem; }
+        .saga-c2-bar { background: #D4850F; height: 100%; border-radius: .25rem; }
         /* Formulaires, valeurs et typographie */
         .shiny-input-container label, .control-label, .form-group label { color: #FFFFFF !important; }
         input, select, .form-control { 
@@ -141,7 +163,7 @@ saga_ui <- function() {
           textOutput("monthly_c1_hint"),
           helpText("Ce montant inclut les nouvelles tentatives. Il reste fixe si le volume change."),
           numericInput("cost_orch", "C2 — Infrastructure logicielle (€/mois)", value = 0, min = 0),
-          helpText("Serveurs, orchestration, stockage, abonnements et accès aux sources. Hors investissement initial."),
+          helpText("Serveurs, orchestration, stockage, abonnements et accès aux sources. Hors investissement initial. Vous pouvez reporter le budget depuis C2 - Infra."),
           numericInput("maint_h", "C3 — Travail humain avec le dispositif (h/mois)", value = 2, min = 0),
           helpText("Revue, corrections, supervision et maintenance humaine."),
           textOutput("monthly_c3_hint"),
@@ -181,88 +203,105 @@ saga_ui <- function() {
     ),
 
     nav_panel("C1 - Inférence",
-      layout_sidebar(
-        sidebar = sidebar(
-          title = "Paramètres de la Tâche",
-          numericInput("c1_n_in", "Jetons en Entrée (n_in) :", value = 8000, min = 1),
-          numericInput("c1_n_out", "Jetons en Sortie (n_out) :", value = 1500, min = 1),
-          numericInput("c1_usd_eur", "Taux (1 USD en EUR) :", value = 0.88, min = 0, step = 0.01),
-          hr(),
-          p(strong("Configuration des Scénarii")),
-          selectInput("c1_mod_a", "Modèle A :", choices = NULL),
-          selectInput("c1_mod_b", "Modèle B :", choices = NULL),
-          selectInput("c1_mod_c", "Modèle C :", choices = NULL)
+      layout_sidebar(fillable=FALSE, fill=FALSE,
+        sidebar=sidebar(title="Votre budget d’inférence",width=370,class="monthly-sidebar",gap="0.5rem",padding="1rem",
+          actionButton("load_c1_example","Charger l’exemple d’estimation C1",class="btn-primary"),
+          helpText("Paramètres illustratifs ; utilise les tarifs actifs de votre session."),
+          h5("1. Taille moyenne d’un appel"),
+          numericInput("c1_n_in","Jetons en entrée par appel",8000,min=0,step=1),
+          numericInput("c1_n_out","Jetons en sortie par appel",1500,min=0,step=1),
+          helpText("Un jeton est une unité de texte facturée par le modèle. Utilisez des volumes représentatifs de vos appels."),
+          numericInput("c1_usd_eur","Taux de change — euros pour 1 dollar",.88,min=.0001,step=.01),
+          h5("2. Activité mensuelle"),
+          numericInput("c1_v","Nombre d’entrées à traiter par mois",1200,min=0,step=1),
+          numericInput("c1_calls","Nombre moyen d’appels par entrée",1,min=0,step=.1),
+          helpText("Incluez les étapes successives et les nouvelles tentatives. Le même modèle et la même taille moyenne d’appel sont supposés pour tous ces appels."),
+          h5("3. Comparer puis choisir"),
+          selectInput("c1_mod_a","Modèle A",choices=NULL),
+          selectInput("c1_mod_b","Modèle B",choices=NULL),
+          selectInput("c1_mod_c","Modèle C",choices=NULL),
+          radioButtons("c1_selected","Modèle retenu pour le budget",choices=c("A","B","C"),selected="A",inline=TRUE)
         ),
-        card(
-          card_header("Comparatif Brut de l'Inférence (C1) par Tâche"),
-          plotlyOutput("plot_c1_compare")
-        ),
-        card(
-          card_header("Grille Tarifaire Locale"),
-          DTOutput("table_c1_pricing")
+        div(class="monthly-workspace",
+          h3("Estimer le budget mensuel des modèles"),
+          p("Comparez trois modèles sur les mêmes hypothèses, puis choisissez celui dont le budget sera reporté."),
+          card(id="c1-result-card",card_header("C1 — Estimation retenue"),uiOutput("c1_summary"),
+            p("Le report remplace uniquement le budget C1 mensuel. Le volume de la destination est conservé ; ce budget y reste fixe lorsque le volume change."),
+            uiOutput("c1_transfer_actions"),
+            p(class="saga-component-note","Après une modification, cliquez de nouveau pour reporter le budget. Aucun onglet n’est synchronisé automatiquement.")),
+          card(card_header("Comparer le coût mensuel des trois modèles"),plotlyOutput("plot_c1_compare",height="310px")),
+          tags$details(class="monthly-details",tags$summary("Tarifs actifs et périmètre de l’estimation"),
+            p("Les prix du catalogue local sont convertis en euros par million de jetons au taux saisi. L’onglet Prix API permet de modifier puis d’appliquer vos tarifs à cette session."),
+            DTOutput("table_c1_pricing"),
+            p("Cette estimation ne modélise pas les réductions de cache ou de traitement par lots, les appels à des outils ni les taxes. Pour plusieurs modèles ou un budget issu de factures, renseignez le montant global dans Manuel vs Agentique ou dans le CTP."))
         )
       )
     ),
 
     nav_panel("C2 - Infra",
       layout_sidebar(
-        sidebar = sidebar(
-          title = "Paramètres d'Infrastructure",
-          numericInput("c2_v", "Volume mensuel de tâches (V) :", value = 500, min = 1),
-          numericInput("c2_usd_eur", "Taux (1 USD en EUR) :", value = 0.88, min = 0, step = 0.01),
-          hr(),
-          p(strong("Architecture C2 (Cochez) :")),
-          uiOutput("ui_c2_fixed_choices"),
-          hr(),
-          uiOutput("ui_c2_var_choices")
+        fillable=FALSE, fill=FALSE,
+        sidebar=sidebar(title="Votre budget C2 mensuel", width=370,
+          class="monthly-sidebar", gap="0.5rem", padding="1rem",
+          actionButton("load_c2_example", "Charger l’exemple — Veille, C2 à 2 400 €/mois", class="btn-primary"),
+          helpText("Remplace les six montants de cet onglet. Hypothèses pédagogiques, pas des tarifs fournisseurs."),
+          p("Renseignez les montants mensualisés attribués au projet. Comptez chaque dépense une seule fois. Un champ vide reste inconnu ; indiquez zéro si le poste est nul."),
+          lapply(seq_len(nrow(infra_posts)), function(i) tagList(
+            numericInput(infra_posts$id[i], paste0(infra_posts$label[i], " (€/mois)"), value=NA_real_, min=0, step=.01),
+            helpText(infra_posts$help[i]))),
+          actionButton("clear_c2", "Effacer les montants"),
+          helpText("Vos montants restent disponibles pendant cette session uniquement.")
         ),
-        layout_columns(
-          col_widths = c(6, 6),
-          value_box("C2: Socle Fixe (Mensuel)", uiOutput("vb_c2_fixe_val"), theme = "secondary", class = "mb-3"),
-          value_box("C2: Charge Variable (× V)", uiOutput("vb_c2_var_val"), theme = "secondary", class = "mb-3")
-        ),
-        layout_columns(
-          col_widths = c(8, 4),
-          card(
-            card_header("Distribution Mensuelle selon les Piliers de la Taxonomie"),
-            plotlyOutput("plot_c2_breakdown")
-          ),
-          value_box(title = HTML("<span>Total C<sub>2</sub> Mensuel (à copier dans CTP)</span>"), value = uiOutput("vb_c2_total_val"), theme = "primary")
-        ),
-        card(
-          card_header("Catalogue FinOps de l'Infrastructure"),
-          DTOutput("table_c2_pricing")
+        tags$div(class="monthly-workspace",
+          h3("Construire le budget mensuel d’infrastructure"),
+          p("Additionnez les moyens logiciels récurrents nécessaires au dispositif. Ce budget ne se redimensionne pas automatiquement avec le volume."),
+          card(id="c2-result-card",card_header("C2 — Budget mensuel du dispositif"),
+            uiOutput("c2_budget"),
+            p("Le report remplace C2 dans l’onglet choisi. Les autres paramètres sont conservés."),
+            uiOutput("c2_transfer_actions"),
+            p(class="saga-c2-note", "Après une modification du budget, cliquez de nouveau pour le reporter. Aucun onglet n’est synchronisé automatiquement.")),
+          tags$details(class="monthly-details",
+            tags$summary("Que compter dans ce budget ?"),
+            p("C2 couvre les ressources logicielles récurrentes, y compris les outils de supervision et de tests. Les appels aux modèles restent en C1 ; le temps des personnes reste en C3 ; la conception et l’intégration initiales relèvent de l’investissement."),
+            p("Pour un abonnement annuel, utilisez son équivalent mensuel. Pour une ressource partagée, retenez seulement la part attribuée au projet selon une répartition justifiée. Évaluez les consommations variables avant de les intégrer au montant mensuel du poste."),
+            p("Une même base fiscale doit être utilisée pour tous les montants comparés. Les factures, contrats et relevés d’usage servent à étayer les hypothèses."))
         )
       )
     ),
 
     nav_panel("C3 - Humain",
-      layout_sidebar(
-        sidebar = sidebar(
-          title = "Inducteurs Humains (C3)",
-          numericInput("c3_v", "Volume mensuel de tâches (V) :", value = 31, min = 1),
-          numericInput("c3_w", "Coût horaire conventionnel (€/h) :", value = 15, min = 1),
-          hr(),
-          p(strong("Phase 1: Calibrage (Build Étendu)")),
-          numericInput("c3_h1_input", "Effort Forfaitaire (h/mois) :", value = 15, min = 0),
-          hr(),
-          p(strong("Phase 2: Croisière (Run)")),
-          sliderInput("c3_escalade", "Taux d'escalade (%) :", min = 0, max = 50, value = 10, step = 0.5),
-          numericInput("c3_t_reprise", "Temps de reprise (minutes/tâche) :", value = 15, min = 0),
-          numericInput("c3_review", "Revue systématique (minutes/document) :", value = 0, min = 0),
-          numericInput("c3_governance", "Gouvernance et entretien (h/mois) :", value = 0, min = 0),
-          p("Zéro est une hypothèse : compléter la revue et la gouvernance avant de conclure.")
+      layout_sidebar(fillable=FALSE, fill=FALSE,
+        sidebar=sidebar(title="Votre charge humaine",width=370,class="monthly-sidebar",gap="0.5rem",padding="1rem",
+          actionButton("load_c3_example","Charger l’exemple — Veille, C3",class="btn-primary"),
+          helpText("Remplace les hypothèses de cet onglet uniquement."),
+          h5("1. Activité et coût horaire"),
+          numericInput("c3_v","Nombre d’entrées à traiter par mois",NA_real_,min=0,step=1),
+          numericInput("c3_w","Coût horaire humain de référence (€/h)",NA_real_,min=0),
+          h5("2. Calibrage — mise au point"),
+          numericInput("c3_h1_input","Travail humain total en calibrage (h/mois)",NA_real_,min=0),
+          helpText("Incluez revue, corrections, supervision et maintenance pendant la mise au point du dispositif."),
+          h5("3. Croisière — fonctionnement courant"),
+          numericInput("c3_review","Revue systématique par entrée (minutes)",NA_real_,min=0),
+          numericInput("c3_escalade","Part des entrées à reprendre (%)",NA_real_,min=0,max=100,step=.5),
+          numericInput("c3_t_reprise","Temps de reprise par entrée concernée (minutes)",NA_real_,min=0),
+          numericInput("c3_governance","Supervision et maintenance fixes (h/mois)",NA_real_,min=0),
+          helpText("Un champ vide reste inconnu. Saisissez zéro seulement si le travail correspondant est effectivement nul."),
+          h5("4. Phase du calcul mensuel"),
+          radioButtons("c3_monthly_phase","Heures à reporter dans Manuel vs Agentique",choices=c("Croisière"="croisiere","Calibrage"="calibrage"),selected="croisiere"),
+          helpText("Le report CTP utilise toujours les deux phases. Leur durée se règle dans le CTP.")
         ),
-        layout_columns(
-          col_widths = c(6, 6),
-          value_box("h1 (Calibrage) - Mois 1 à 3", uiOutput("vb_c3_h1"), theme = "secondary", class = "mb-3",
-                    p("Heures copier/coller -> CTP")),
-          value_box("h2 (Croisière) - Mois 4+", uiOutput("vb_c3_h2"), theme = "primary", class = "mb-3",
-                    p("Heures copier/coller -> CTP"))
-        ),
-        card(
-          card_header("Effort Asymétrique de Maintenance (Mois 1-3 vs Mois 4+)"),
-          plotlyOutput("plot_c3_asym")
+        div(class="monthly-workspace",
+          h3("Construire la charge humaine du dispositif"),
+          p("Distinguez l’effort de mise au point de celui du fonctionnement courant. La croisière additionne revue systématique, reprises et supervision."),
+          card(id="c3-result-card",card_header("C3 — Heures et coûts par phase"),uiOutput("c3_summary"),
+            p("Vers Manuel vs Agentique : remplace les heures du dispositif pour la phase choisie et le coût horaire commun au manuel et au dispositif. Vers le CTP : remplace les heures des deux phases et le coût horaire. Les volumes, la durée du calibrage et l’horizon sont conservés."),
+            uiOutput("c3_transfer_actions"),
+            p(class="saga-component-note","Les reports sont ponctuels. Cliquez de nouveau après une modification de vos hypothèses.")),
+          conditionalPanel("output.c3_ready === 'yes'",card(card_header("Comparer le coût humain mensuel des deux phases"),plotlyOutput("plot_c3_asym",height="310px"))),
+          tags$details(class="monthly-details",tags$summary("Comment lire ces hypothèses ?"),
+            p("Le calibrage désigne la mise au point du dispositif. La croisière désigne son fonctionnement courant une fois les premiers réglages effectués ; elle conserve une charge humaine."),
+            p("La revue porte sur toutes les entrées. Le temps de reprise concerne uniquement la part qui nécessite une correction ou une intervention humaine. La supervision et la maintenance sont ajoutées comme un forfait mensuel, sans les compter à nouveau dans les autres postes."),
+            p("Le CTP tient compte de la durée de chaque phase sur son horizon T, fixé à six mois par défaut. Le taux horaire doit utiliser la même convention dans toutes les comparaisons."))
         )
       )
     ),
@@ -281,6 +320,7 @@ saga_ui <- function() {
           helpText("Toutes les tentatives sont comprises. Le budget saisi reste constant si le volume change."),
           numericInput("ctp_orch", "C2 — Infrastructure logicielle (€/mois)", 218, min=0),
           textOutput("ctp_c2_hint"),
+          helpText("Le bouton de report de C2 - Infra renseigne ce montant comme total déjà évalué, sans majoration."),
           tags$details(tags$summary("Estimation avancée de C2"),
             checkboxInput("ctp_detailed", "C2 est un total mensuel déjà évalué", TRUE),
             conditionalPanel("!input.ctp_detailed",

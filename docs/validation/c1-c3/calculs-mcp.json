@@ -1,0 +1,121 @@
+{
+  "date": "2026-10-06",
+  "checks": [
+    {
+      "tool": "cout_inference_c1",
+      "args": {
+        "n_in": 8000,
+        "n_out": 1500,
+        "p_in_1M": 0.25,
+        "p_out_1M": 2,
+        "devise": "EUR",
+        "usd_eur_rate": 0.88
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"c1\":0.0044,\"devise\":\"EUR\",\"c1_usd\":0.005}"
+          }
+        ],
+        "structuredContent": {
+          "c1": 0.0044,
+          "devise": "EUR",
+          "c1_usd": 0.005
+        },
+        "isError": false
+      }
+    },
+    {
+      "tool": "heures_croisiere_h2",
+      "args": {
+        "volume_mensuel": 1200,
+        "taux_escalade": 0.2,
+        "temps_reprise_minutes": 15,
+        "review_minutes": 5,
+        "governance_hours": 40
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"h2\":200}"
+          }
+        ],
+        "structuredContent": {
+          "h2": 200
+        },
+        "isError": false
+      }
+    },
+    {
+      "tool": "cout_inference_c1",
+      "args": {
+        "n_in": 8000,
+        "n_out": 1500,
+        "p_in_1M": 1.25,
+        "p_out_1M": 10,
+        "devise": "EUR",
+        "usd_eur_rate": 0.88
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"c1\":0.022,\"devise\":\"EUR\",\"c1_usd\":0.025}"
+          }
+        ],
+        "structuredContent": {
+          "c1": 0.022,
+          "devise": "EUR",
+          "c1_usd": 0.025
+        },
+        "isError": false
+      }
+    },
+    {
+      "tool": "heures_croisiere_h2",
+      "args": {
+        "volume_mensuel": 1200,
+        "taux_escalade": 1,
+        "temps_reprise_minutes": 15,
+        "review_minutes": 5,
+        "governance_hours": 40
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"h2\":440}"
+          }
+        ],
+        "structuredContent": {
+          "h2": 440
+        },
+        "isError": false
+      }
+    },
+    {
+      "tool": "heures_croisiere_h2",
+      "args": {
+        "volume_mensuel": 0,
+        "taux_escalade": 0,
+        "temps_reprise_minutes": 0,
+        "review_minutes": 0,
+        "governance_hours": 0
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"h2\":0}"
+          }
+        ],
+        "structuredContent": {
+          "h2": 0
+        },
+        "isError": false
+      }
+    }
+  ]
+}

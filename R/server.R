@@ -253,184 +253,195 @@ saga_server <- function(input, output, session) {
     }
   })
 
+  # -- C1 : comparaison et budget mensuel explicitement retenu --
+  c1_inputs <- reactive(setNames(lapply(c1_input_names,function(id) input[[id]]),c1_input_names))
+  c1_result <- reactive(tryCatch(compute_inference_scenario(c1_inputs(),pricing_data()),
+    error=function(e) list(valid=FALSE,error=conditionMessage(e))))
+  observeEvent(input$load_c1_example, {
+    x <- read_component_example("c1")$inputs
+    if(!all(unlist(x[c("c1_mod_a","c1_mod_b","c1_mod_c")]) %in% pricing_data()$Identifiant)) {
+      showNotification("Un modèle de l’exemple est absent du catalogue actif. Rétablissez les tarifs de référence ou choisissez vos modèles.",type="warning")
+      return()
+    }
+    for(id in c("c1_n_in","c1_n_out","c1_usd_eur","c1_v","c1_calls")) updateNumericInput(session,id,value=x[[id]])
+    for(id in c("c1_mod_a","c1_mod_b","c1_mod_c")) updateSelectInput(session,id,selected=x[[id]])
+    updateRadioButtons(session,"c1_selected",selected=x$c1_selected)
+    showNotification("Exemple C1 chargé. Le budget utilise vos tarifs actifs.",type="message")
+  })
+  output$c1_summary <- renderUI({
+    r <- c1_result()
+    if(!r$valid) return(p(role="status",r$error))
+    tagList(p(strong(paste0("Modèle ",r$selected$Scenario," — ",r$selected$Modele))),
+      div(class="monthly-metrics",
+        div(class="monthly-metric",span("Coût par appel"),strong(id="c1-call",`data-value`=r$selected$Par_appel,money(r$selected$Par_appel,6))),
+        div(class="monthly-metric",span("Budget C1 mensuel"),strong(id="c1-total",`data-value`=r$total,paste0(money(r$total,2),"/mois")))),
+      p(paste0(r$volume," entrées/mois × ",r$calls," appels/entrée = ",r$volume*r$calls," appels/mois.")))
+  })
+  output$c1_transfer_actions <- renderUI({
+    div(class="saga-component-actions",
+      actionButton("c1_to_monthly","Utiliser dans Manuel vs Agentique",disabled=!c1_result()$valid),
+      actionButton("c1_to_ctp","Utiliser dans Diagnostic d’Investissement (CTP)",disabled=!c1_result()$valid))
+  })
+  c1_transfer <- function(destination) {
+    r <- c1_result()
+    if(!r$valid) { showNotification(r$error,type="warning");return(invisible(FALSE)) }
+    id <- if(destination=="monthly") "cost_c1_month" else "ctp_c1_month"
+    label <- if(destination=="monthly") "Manuel vs Agentique" else "Diagnostic d'Investissement (CTP)"
+    updateNumericInput(session,id,value=r$total)
+    bslib::nav_select("saga_nav",selected=label,session=session)
+    showNotification(paste0("Budget C1 reporté : ",money(r$total,2),"/mois. Volume de la destination conservé ; budget fixe."),type="message")
+    invisible(TRUE)
+  }
+  observeEvent(input$c1_to_monthly,{c1_transfer("monthly")},ignoreInit=TRUE)
+  observeEvent(input$c1_to_ctp,{c1_transfer("ctp")},ignoreInit=TRUE)
   output$table_c1_pricing <- renderDT({
+    rate <- input$c1_usd_eur
+    validate(need(is.numeric(rate) && length(rate)==1L && !is.na(rate) && is.finite(rate) && rate>0,"Renseignez un taux de change positif."))
     df <- pricing_data()
-    req(input$c1_usd_eur)
-    
-    # Create display dataframe with EUR conversion
-    df_disp <- df
-    df_disp$p_in_1M <- df_disp$p_in_1M * input$c1_usd_eur
-    df_disp$p_out_1M <- df_disp$p_out_1M * input$c1_usd_eur
-    
-    # Rename columns to clearly state currency
-    names(df_disp)[names(df_disp) == "p_in_1M"] <- "p_in_1M (\u20ac)"
-    names(df_disp)[names(df_disp) == "p_out_1M"] <- "p_out_1M (\u20ac)"
-    
-    datatable(df_disp, options = list(pageLength = 5, dom = 'tip', order = list(list(1, 'asc')))) %>%
-      formatRound(columns = c("p_in_1M (\u20ac)", "p_out_1M (\u20ac)"), digits = 3)
+    cols <- c("p_in_1M","p_out_1M","p_cache_1M")
+    df[cols] <- lapply(df[cols],function(x) x*rate)
+    names(df) <- c("Modèle","Fournisseur","Entrée (€/million)","Sortie (€/million)","Cache (€/million)","Vérifié le")
+    datatable(df,rownames=FALSE,options=list(pageLength=5,dom='tip',scrollX=TRUE)) %>%
+      formatRound(columns=names(df)[3:5],digits=3)
   })
-  
   output$plot_c1_compare <- renderPlotly({
-    req(input$c1_mod_a, input$c1_mod_b, input$c1_mod_c, input$c1_usd_eur)
-    df_price <- pricing_data()
-    
-    calc_c1 <- function(mod_id) {
-      row <- df_price[df_price$Identifiant == mod_id, ]
-      if(nrow(row) == 0) return(0)
-      cost_usd <- (row$p_in_1M * input$c1_n_in + row$p_out_1M * input$c1_n_out) / 1000000
-      cost_usd * input$c1_usd_eur
-    }
-    
-    res <- data.frame(
-      Scenario = c("A", "B", "C"),
-      Modele = c(input$c1_mod_a, input$c1_mod_b, input$c1_mod_c),
-      C1 = c(calc_c1(input$c1_mod_a), calc_c1(input$c1_mod_b), calc_c1(input$c1_mod_c))
-    )
-    res$Label <- paste0(res$Scenario, " : ", res$Modele)
-    
-    p <- ggplot(res, aes(x = Label, y = C1, fill = Scenario)) +
-      geom_col(width = 0.5) +
-      scale_fill_manual(values = c("A" = "#D4850F", "B" = "#FFFFFF", "C" = "#F5B041")) +
-      labs(y = "Coût C1 par tâche (€)", x = "") +
-      theme_minimal(base_size = 14) +
-      theme(
-        panel.background = element_rect(fill = "transparent", color = NA),
-        plot.background = element_rect(fill = "transparent", color = NA),
-        text = element_text(color = "white"),
-        axis.text = element_text(color = "white"),
-        legend.position = "none"
-      )
-    ggplotly(p, tooltip = c("y")) %>% layout(plot_bgcolor="transparent", paper_bgcolor="transparent")
+    r <- c1_result();validate(need(r$valid,r$error))
+    df <- r$comparison
+    plot_ly(df,x=~Mensuel,y=~Scenario,type="bar",orientation="h",
+      marker=list(color=ifelse(df$Scenario==r$selected$Scenario,"#D4850F","#779FCB")),
+      text=vapply(df$Mensuel,money,character(1),digits=2),textposition="outside",cliponaxis=FALSE,
+      customdata=df$Modele,hovertemplate="%{y} — %{customdata}<br>%{x:.4f} €/mois<extra></extra>") %>%
+      layout(font=list(color="white",family="system-ui, sans-serif"),plot_bgcolor="transparent",paper_bgcolor="transparent",
+        xaxis=list(title="Budget mensuel (€)",range=c(0,max(1,max(df$Mensuel)*1.35))),
+        yaxis=list(title="Modèle",autorange="reversed"),margin=list(l=60,r=35,t=15,b=60)) %>% config(displayModeBar=FALSE)
   })
-  
-  # -- Onglet C2 (Test Infra) --
-  
-  infra_data <- reactive({
-    if (file.exists("data/pricing_infra.csv")) {
-      read.csv("data/pricing_infra.csv", stringsAsFactors = FALSE)
+
+  # -- Onglet C2 : construction explicite du budget mensuel --
+  c2_inputs <- reactive(setNames(lapply(infra_input_names, function(id) input[[id]]), infra_input_names))
+  c2_budget_result <- reactive(compute_infra_budget(c2_inputs()))
+  observeEvent(input$load_c2_example, {
+    x <- read_infra_example()$inputs
+    for(id in infra_input_names) updateNumericInput(session,id,value=x[[id]])
+    showNotification("Exemple pédagogique C2 chargé. Les six montants restent modifiables.",type="message")
+  })
+  observeEvent(input$clear_c2, {
+    for(id in infra_input_names) updateNumericInput(session,id,value=NA_real_)
+  })
+  output$c2_budget <- renderUI({
+    r <- c2_budget_result()
+    if(!r$complete) return(tagList(
+      p(id="c2-status",role="status",paste0("Budget à compléter — ",r$count,if(r$count==1) " poste renseigné sur 6" else " postes renseignés sur 6")),
+      if(nzchar(r$error)) p(role="alert",r$error)))
+    labels <- r$rows$Poste; values <- r$rows$Montant
+    tagList(
+      div(class="monthly-metric saga-c2-metric",span("Total mensuel C2"),
+          strong(id="c2-total",`data-value`=r$total,paste0(money(r$total,2),"/mois"))),
+      if(r$total==0) p(id="c2-zero","Les six postes sont explicitement nuls. Le budget C2 retenu est de 0 €/mois.")
+      else tagList(h4("Répartition du budget"),
+        tags$ul(class="saga-c2-bars",lapply(seq_along(values),function(i) tags$li(
+          div(class="saga-c2-bar-label",span(labels[i]),strong(class="monthly-number",money(values[i],2))),
+          div(class="saga-c2-track",`aria-hidden`="true",
+            div(class="saga-c2-bar",style=paste0("width:",100*values[i]/max(values),"%;")))))))
+    )
+  })
+  output$c2_transfer_actions <- renderUI({
+    disabled <- !c2_budget_result()$complete
+    div(class="saga-c2-actions",
+      actionButton("c2_to_monthly","Utiliser dans Manuel vs Agentique",disabled=disabled),
+      actionButton("c2_to_ctp","Utiliser dans Diagnostic d’Investissement (CTP)",disabled=disabled))
+  })
+  # Validation répétée côté serveur : un clic ne doit jamais transférer un ancien total.
+  c2_transfer <- function(destination) {
+    r <- c2_budget_result()
+    if(!r$complete) {
+      showNotification("Complétez les six montants C2 avant le report.",type="warning")
+      return(invisible(FALSE))
+    }
+    if(destination=="monthly") {
+      updateNumericInput(session,"cost_orch",value=r$total)
+      bslib::nav_select("saga_nav",selected="Manuel vs Agentique",session=session)
+      label <- "Manuel vs Agentique"
     } else {
-      data.frame(Pilier=character(), Service=character(), Type_Facturation=character(), Prix_USD=numeric(), Unite=character())
+      updateNumericInput(session,"ctp_orch",value=r$total)
+      updateCheckboxInput(session,"ctp_detailed",value=TRUE)
+      updateNumericInput(session,"ctp_kappa",value=1)
+      bslib::nav_select("saga_nav",selected="Diagnostic d'Investissement (CTP)",session=session)
+      label <- "Diagnostic d’Investissement (CTP), sans majoration"
     }
+    showNotification(paste0("C2 reporté : ",money(r$total,2),"/mois dans ",label,". Autres paramètres conservés."),type="message")
+    invisible(TRUE)
+  }
+  observeEvent(input$c2_to_monthly, { c2_transfer("monthly") },ignoreInit=TRUE)
+  observeEvent(input$c2_to_ctp, { c2_transfer("ctp") },ignoreInit=TRUE)
+
+  # -- C3 : charge humaine par phase, sans durée de phase imposée ici --
+  c3_inputs <- reactive(setNames(lapply(c3_input_names,function(id) input[[id]]),c3_input_names))
+  c3_computation <- reactive(tryCatch(compute_human_scenario(c3_inputs()),
+    error=function(e) list(valid=FALSE,error=conditionMessage(e))))
+  observeEvent(input$load_c3_example, {
+    x <- read_component_example("c3")$inputs
+    for(id in c3_input_names) updateNumericInput(session,id,value=x[[id]])
+    updateRadioButtons(session,"c3_monthly_phase",selected="croisiere")
+    showNotification("Exemple C3 chargé : calibrage et croisière restent modifiables.",type="message")
   })
-  
-  observe({
-    df <- infra_data()
-    df_fixe <- df[df$Type_Facturation == "Fixe", ]
-    df_var <- df[df$Type_Facturation == "Variable", ]
-    
-    if (nrow(df) > 0) {
-      choices_fixe <- setNames(df_fixe$Service, paste0(df_fixe$Service, " (~$", df_fixe$Prix_USD, "/", df_fixe$Unite, ")"))
-      choices_var <- setNames(df_var$Service, paste0(df_var$Service, " (~$", df_var$Prix_USD, "/", df_var$Unite, ")"))
-      
-      output$ui_c2_fixed_choices <- renderUI({
-        checkboxGroupInput("c2_fixed_sel", "Services Fixes (Base) :", choices = choices_fixe, selected = df_fixe$Service)
-      })
-      
-      output$ui_c2_var_choices <- renderUI({
-        checkboxGroupInput("c2_var_sel", "Services Variables (Par Tâche) :", choices = choices_var, selected = df_var$Service)
-      })
+  output$c3_ready <- renderText(if(c3_computation()$valid) "yes" else "no")
+  outputOptions(output,"c3_ready",suspendWhenHidden=FALSE)
+  output$c3_summary <- renderUI({
+    r <- c3_computation()
+    if(!r$valid) return(p(role="status",r$error))
+    metric <- function(label,h,id) div(class="monthly-metric",span(label),
+      strong(id=id,`data-value`=h,paste0(formatC(h,format="f",digits=2,decimal.mark=",")," h/mois")),
+      p(paste0(money(h*r$w,2),"/mois à ",money(r$w,2),"/h")))
+    tagList(div(class="monthly-metrics",metric("Calibrage — h1",r$h1,"c3-h1"),metric("Croisière — h2",r$h2,"c3-h2")),
+      p(paste0("Croisière : ",formatC(r$review,format="f",digits=2,decimal.mark=",")," h de revue + ",
+        formatC(r$reprise,format="f",digits=2,decimal.mark=",")," h de reprises + ",
+        formatC(r$governance,format="f",digits=2,decimal.mark=",")," h de supervision et maintenance par mois.")),
+      p(strong(paste0("Phase du report mensuel : ",if(identical(input$c3_monthly_phase,"calibrage")) "calibrage" else "croisière","."))))
+  })
+  output$c3_transfer_actions <- renderUI({
+    r <- c3_computation()
+    phase_ok <- identical(input$c3_monthly_phase,"calibrage") || identical(input$c3_monthly_phase,"croisiere")
+    div(class="saga-component-actions",
+      actionButton("c3_to_monthly","Utiliser dans Manuel vs Agentique",disabled=!r$valid || !phase_ok),
+      actionButton("c3_to_ctp","Utiliser dans Diagnostic d’Investissement (CTP)",disabled=!r$valid))
+  })
+  c3_transfer <- function(destination) {
+    r <- c3_computation()
+    if(!r$valid) { showNotification(r$error,type="warning");return(invisible(FALSE)) }
+    if(destination=="monthly") {
+      phase <- input$c3_monthly_phase
+      if(length(phase)!=1L || !phase %in% c("calibrage","croisiere")) {
+        showNotification("Choisissez la phase du report mensuel.",type="warning");return(invisible(FALSE))
+      }
+      h <- if(phase=="calibrage") r$h1 else r$h2
+      updateNumericInput(session,"maint_h",value=h)
+      updateNumericInput(session,"cost_h",value=r$w)
+      label <- "Manuel vs Agentique"
+      message <- paste0("C3 reporté : ",h," h/mois en ",phase,". Coût horaire commun au manuel et au dispositif : ",money(r$w,2),"/h. Volume conservé.")
+    } else {
+      updateNumericInput(session,"ctp_h1",value=r$h1)
+      updateNumericInput(session,"ctp_h2",value=r$h2)
+      updateNumericInput(session,"ctp_w",value=r$w)
+      label <- "Diagnostic d'Investissement (CTP)"
+      message <- "C3 reporté : heures de calibrage et de croisière, et coût horaire. Volume, durée du calibrage et horizon conservés."
     }
-  })
-  
-  output$table_c2_pricing <- renderDT({
-    df <- infra_data()
-    req(input$c2_usd_eur)
-    df$Prix_EUR <- df$Prix_USD * input$c2_usd_eur
-    datatable(df, options = list(pageLength = 10, dom = 'tip')) %>%
-      formatRound(columns = c("Prix_USD", "Prix_EUR"), digits = 3)
-  })
-  
-  c2_computation <- reactive({
-    df <- infra_data()
-    req(input$c2_usd_eur, input$c2_v)
-    
-    # Filter selected
-    df_selected_fixe <- df[df$Service %in% input$c2_fixed_sel, ]
-    df_selected_var <- df[df$Service %in% input$c2_var_sel, ]
-    
-    # Computed in EUR
-    total_fixe_eur <- sum(df_selected_fixe$Prix_USD, na.rm=TRUE) * input$c2_usd_eur
-    total_var_unit_eur <- sum(df_selected_var$Prix_USD, na.rm=TRUE) * input$c2_usd_eur
-    total_var_month_eur <- total_var_unit_eur * input$c2_v
-    
-    total_month <- total_fixe_eur + total_var_month_eur
-    
-    # Breakdown for plotting
-    df_selected <- rbind(df_selected_fixe, df_selected_var)
-    df_selected$Cost_Mensuel_USD <- ifelse(df_selected$Type_Facturation == "Fixe", df_selected$Prix_USD, df_selected$Prix_USD * input$c2_v)
-    df_selected$Cost_Mensuel_EUR <- df_selected$Cost_Mensuel_USD * input$c2_usd_eur
-    
-    df_agg <- aggregate(Cost_Mensuel_EUR ~ Pilier, data = df_selected, sum)
-    
-    list(fixe = total_fixe_eur, var_month = total_var_month_eur, total = total_month, df_agg = df_agg)
-  })
-  
-  output$vb_c2_fixe_val <- renderUI({ h3(sprintf("%.2f €", c2_computation()$fixe)) })
-  output$vb_c2_var_val <- renderUI({ h3(sprintf("%.2f €", c2_computation()$var_month)) })
-  output$vb_c2_total_val <- renderUI({ h2(sprintf("%.2f €", c2_computation()$total), style="margin:0;") })
-  
-  output$plot_c2_breakdown <- renderPlotly({
-    req(c2_computation()$df_agg)
-    df_plot <- c2_computation()$df_agg
-    p <- ggplot(df_plot, aes(x = Pilier, y = Cost_Mensuel_EUR)) +
-      geom_col(fill = "#D4850F") +
-      labs(y = "Coût C2 Mensuel (€)", x = "") +
-      theme_minimal(base_size = 14) +
-      theme(
-        panel.background = element_rect(fill = "transparent", color = NA),
-        plot.background = element_rect(fill = "transparent", color = NA),
-        text = element_text(color = "white"),
-        axis.text = element_text(color = "white"),
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none"
-      )
-    ggplotly(p, tooltip = c("y")) %>% layout(plot_bgcolor="transparent", paper_bgcolor="transparent")
-  })
-  
-  # -- Onglet C3 (Test Humain) --
-  
-  c3_computation <- reactive({
-    req(input$c3_v, input$c3_h1_input, input$c3_escalade, input$c3_t_reprise)
-    
-    h1_val <- input$c3_h1_input
-    h2_val <- compute_h2_cruise(
-      volume_mensuel = input$c3_v,
-      taux_escalade = as.numeric(input$c3_escalade) / 100,
-      temps_reprise_minutes = input$c3_t_reprise,
-      review_minutes = input$c3_review, governance_hours = input$c3_governance
-    )
-    
-    list(h1 = h1_val, h2 = h2_val, w = input$c3_w)
-  })
-  
-  output$vb_c3_h1 <- renderUI({ h3(sprintf("%.1f h", c3_computation()$h1)) })
-  output$vb_c3_h2 <- renderUI({ h3(sprintf("%.1f h", c3_computation()$h2)) })
-  
+    bslib::nav_select("saga_nav",selected=label,session=session)
+    showNotification(message,type="message",duration=8)
+    invisible(TRUE)
+  }
+  observeEvent(input$c3_to_monthly,{c3_transfer("monthly")},ignoreInit=TRUE)
+  observeEvent(input$c3_to_ctp,{c3_transfer("ctp")},ignoreInit=TRUE)
   output$plot_c3_asym <- renderPlotly({
-    res <- c3_computation()
-    
-    df_plot <- data.frame(
-      Phase = c("Phase 1 : Calibrage (M1-M3)", "Phase 2 : Croisière (M4+)"),
-      Heures = c(res$h1, res$h2),
-      Cout_Eur = c(res$h1 * res$w, res$h2 * res$w)
-    )
-    df_plot$Label <- paste0(df_plot$Phase, "\n", df_plot$Heures, "h/mois")
-    
-    p <- ggplot(df_plot, aes(x = Phase, y = Cout_Eur, fill = Phase)) +
-      geom_col(width = 0.5) +
-      scale_fill_manual(values = c("Phase 1 : Calibrage (M1-M3)" = "#D4850F", "Phase 2 : Croisière (M4+)" = "#FFFFFF")) +
-      labs(y = "Coût C3 Mensuel (€)", x = "") +
-      theme_minimal(base_size = 14) +
-      theme(
-        panel.background = element_rect(fill = "transparent", color = NA),
-        plot.background = element_rect(fill = "transparent", color = NA),
-        text = element_text(color = "white"),
-        axis.text = element_text(color = "white"),
-        legend.position = "none"
-      )
-    ggplotly(p, tooltip = c("y")) %>% layout(plot_bgcolor="transparent", paper_bgcolor="transparent")
+    r <- c3_computation();validate(need(r$valid,r$error))
+    df <- data.frame(Phase=c("Calibrage","Croisière"),Cout=c(r$h1,r$h2)*r$w)
+    plot_ly(df,x=~Cout,y=~Phase,type="bar",orientation="h",marker=list(color=c("#D4850F","#779FCB")),
+      text=vapply(df$Cout,money,character(1),digits=2),textposition="outside",cliponaxis=FALSE,
+      hovertemplate="%{y}<br>%{x:.2f} €/mois<extra></extra>") %>%
+      layout(font=list(color="white",family="system-ui, sans-serif"),plot_bgcolor="transparent",paper_bgcolor="transparent",
+        xaxis=list(title="Coût humain mensuel (€)",range=c(0,max(1,max(df$Cout)*1.35))),
+        yaxis=list(title="",autorange="reversed"),margin=list(l=90,r=30,t=15,b=60)) %>% config(displayModeBar=FALSE)
   })
-  
+
   # -- Onglet CTP : exploitation, investissement et valeur par phase --
   ctp_inputs <- reactive({
     x <- setNames(lapply(ctp_input_names,function(id) input[[id]]),ctp_input_names)

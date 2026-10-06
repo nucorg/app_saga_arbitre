@@ -1,0 +1,112 @@
+[
+  {
+    "file": "test-server.R",
+    "test": "l'interface conserve les six pages publiques sans les pages terrain",
+    "nb": 14,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 14
+  },
+  {
+    "file": "test-server.R",
+    "test": "Shiny conserve effort humain complet et C2 détaillé",
+    "nb": 2,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 2
+  },
+  {
+    "file": "test-server.R",
+    "test": "L'ajout et la suppression de modèles fonctionnent dans l'onglet Prix API",
+    "nb": 5,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 5
+  },
+  {
+    "file": "test-server.R",
+    "test": "appliquer et rétablir les tarifs ne modifient jamais le CSV de référence",
+    "nb": 10,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 10
+  },
+  {
+    "file": "test-server.R",
+    "test": "l'import prépare le brouillon et refuse un fichier invalide sans perdre les tarifs",
+    "nb": 9,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 9
+  },
+  {
+    "file": "test-server.R",
+    "test": "une édition invalide et la suppression du dernier modèle laissent la table intacte",
+    "nb": 9,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 9
+  },
+  {
+    "file": "test-server.R",
+    "test": "deux sessions simultanées ont des catalogues indépendants",
+    "nb": 9,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 9
+  },
+  {
+    "file": "test-server.R",
+    "test": "C2 reste incomplet jusqu'aux six montants et bloque les reports invalides",
+    "nb": 12,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 12
+  },
+  {
+    "file": "test-server.R",
+    "test": "le chargement et l'effacement ne changent que les six postes C2",
+    "nb": 4,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 4
+  },
+  {
+    "file": "test-server.R",
+    "test": "les reports C2 sont ponctuels, limités et sans majoration dans CTP",
+    "nb": 12,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 12
+  },
+  {
+    "file": "test-server.R",
+    "test": "le budget C2 fonctionne sans catalogue historique et reste propre à la session",
+    "nb": 5,
+    "failed": 0,
+    "skipped": false,
+    "error": false,
+    "warning": 0,
+    "passed": 5
+  }
+]

@@ -57,7 +57,7 @@ try{
   await c.call('Emulation.setDeviceMetricsOverride',{width:1440,height:1500,deviceScaleFactor:1,mobile:false});
   const tabs=await c.evaluate(`[...document.querySelectorAll('a.nav-link[data-bs-toggle="tab"]')].map(e=>e.textContent.trim())`);
   assert(tabs.length===(app.includes('terrain')?8:6),'Nombre d’onglets divergent');
-  for(const [label,id] of [['Manuel vs Agentique','monthly_summary'],['C1 - Inférence','plot_c1_compare'],['C2 - Infra','plot_c2_breakdown'],['C3 - Humain','plot_c3_asym'],['Prix API','table_pricing_edit']]){
+  for(const [label,id] of [['Manuel vs Agentique','monthly_summary'],['C1 - Inférence','plot_c1_compare'],['C2 - Infra','c2_budget'],['C3 - Humain','c3_summary'],['Prix API','table_pricing_edit']]){
     await c.evaluate(`Array.from(document.querySelectorAll('a.nav-link')).find(e=>e.textContent.trim()===${JSON.stringify(label)}).click()`);
     await settled(`document.getElementById(${JSON.stringify(id)})?.innerHTML.length>0`);
     const errors=await c.evaluate(`[...document.querySelectorAll('.tab-pane.active .shiny-output-error')].map(e=>e.textContent)`);
