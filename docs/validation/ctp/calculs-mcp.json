@@ -1,0 +1,502 @@
+{
+  "date": "2026-10-06T06:52:15.037477+00:00",
+  "transport": "MCP stdio / tools/call",
+  "launcher": "/home/boris/VIBE/projets/app_saga_terrain/mcp/run.sh",
+  "initialization": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "protocolVersion": "2024-11-05",
+      "capabilities": {
+        "prompts": {
+          "listChanged": false
+        },
+        "resources": {
+          "subscribe": false,
+          "listChanged": false
+        },
+        "tools": {
+          "listChanged": false
+        }
+      },
+      "serverInfo": {
+        "name": "R mcptools server",
+        "version": "0.0.1"
+      }
+    }
+  },
+  "schema": {
+    "name": "ctp_horizon",
+    "description": "Coût Total de Possession (CTP) d'un agent sur un horizon en mois, ventilé en couches : C1 inférence (c * v), C2 orchestration (c_orch * kappa), C3 humain (w * heures ; h1 pendant calibration_months (3 par défaut), h2 ensuite en croisière).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "c": {
+          "type": "number",
+          "description": "Coût unitaire d'inférence par tâche, en euros."
+        },
+        "v": {
+          "type": "number",
+          "description": "Volume mensuel de tâches."
+        },
+        "t_horizon": {
+          "type": "integer",
+          "description": "Horizon en mois (1 à 120)."
+        },
+        "c_orch": {
+          "type": "number",
+          "description": "Coût mensuel d'orchestration, en euros."
+        },
+        "kappa": {
+          "type": "number",
+          "description": "Coefficient multiplicateur de la couche d'orchestration."
+        },
+        "w": {
+          "type": "number",
+          "description": "Coût horaire chargé de l'humain, en euros."
+        },
+        "h1": {
+          "type": "number",
+          "description": "Heures humaines totales par mois de calibrage."
+        },
+        "h2": {
+          "type": "number",
+          "description": "Heures humaines totales par mois après le calibrage."
+        },
+        "calibration_months": {
+          "type": "integer",
+          "description": "Durée du calibrage, entière de 0 à 120 mois (3 par défaut)."
+        },
+        "detail": {
+          "type": "string",
+          "description": "'totaux' (par défaut) renvoie C1, C2, C3 et CTP cumulés ; 'mensuel' ajoute la série mois par mois.",
+          "enum": [
+            "totaux",
+            "mensuel"
+          ]
+        }
+      },
+      "required": [
+        "c",
+        "v",
+        "t_horizon",
+        "c_orch",
+        "kappa",
+        "w",
+        "h1",
+        "h2"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "idempotentHint": true,
+      "destructiveHint": false
+    }
+  },
+  "observations": [
+    {
+      "case": "nominal-ancien-appel",
+      "arguments": {
+        "c": 0.5,
+        "v": 1200,
+        "t_horizon": 6,
+        "c_orch": 2400,
+        "kappa": 1,
+        "w": 60,
+        "h1": 300,
+        "h2": 200,
+        "detail": "mensuel"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "list(C1 = 3600, C2 = 14400, C3 = 90000, CTP = 108000)\nlist(Mois = 1:6, C1 = c(600, 600, 600, 600, 600, 600), C2 = c(2400, 2400, 2400, 2400, 2400, 2400), C3 = c(18000, 18000, 18000, 12000, 12000, 12000), Total = c(21000, 21000, 21000, 15000, 15000, 15000))"
+            }
+          ],
+          "isError": false
+        }
+      },
+      "decoded": {
+        "totaux": {
+          "C1": 3600.0,
+          "C2": 14400.0,
+          "C3": 90000.0,
+          "CTP": 108000.0
+        },
+        "mensuel": [
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          }
+        ]
+      }
+    },
+    {
+      "case": "calibrage-2-mois",
+      "arguments": {
+        "c": 0.5,
+        "v": 1200,
+        "t_horizon": 6,
+        "c_orch": 2400,
+        "kappa": 1,
+        "w": 60,
+        "h1": 300,
+        "h2": 200,
+        "detail": "mensuel",
+        "calibration_months": 2
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "list(C1 = 3600, C2 = 14400, C3 = 84000, CTP = 102000)\nlist(Mois = 1:6, C1 = c(600, 600, 600, 600, 600, 600), C2 = c(2400, 2400, 2400, 2400, 2400, 2400), C3 = c(18000, 18000, 12000, 12000, 12000, 12000), Total = c(21000, 21000, 15000, 15000, 15000, 15000))"
+            }
+          ],
+          "isError": false
+        }
+      },
+      "decoded": {
+        "totaux": {
+          "C1": 3600.0,
+          "C2": 14400.0,
+          "C3": 84000.0,
+          "CTP": 102000.0
+        },
+        "mensuel": [
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          }
+        ]
+      }
+    },
+    {
+      "case": "sans-calibrage",
+      "arguments": {
+        "c": 0.5,
+        "v": 1200,
+        "t_horizon": 6,
+        "c_orch": 2400,
+        "kappa": 1,
+        "w": 60,
+        "h1": 300,
+        "h2": 200,
+        "detail": "mensuel",
+        "calibration_months": 0
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 5,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "list(C1 = 3600, C2 = 14400, C3 = 72000, CTP = 90000)\nlist(Mois = 1:6, C1 = c(600, 600, 600, 600, 600, 600), C2 = c(2400, 2400, 2400, 2400, 2400, 2400), C3 = c(12000, 12000, 12000, 12000, 12000, 12000), Total = c(15000, 15000, 15000, 15000, 15000, 15000))"
+            }
+          ],
+          "isError": false
+        }
+      },
+      "decoded": {
+        "totaux": {
+          "C1": 3600.0,
+          "C2": 14400.0,
+          "C3": 72000.0,
+          "CTP": 90000.0
+        },
+        "mensuel": [
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          }
+        ]
+      }
+    },
+    {
+      "case": "calibrage-hors-horizon",
+      "arguments": {
+        "c": 0.5,
+        "v": 1200,
+        "t_horizon": 6,
+        "c_orch": 2400,
+        "kappa": 1,
+        "w": 60,
+        "h1": 300,
+        "h2": 200,
+        "detail": "mensuel",
+        "calibration_months": 12
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 6,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "list(C1 = 3600, C2 = 14400, C3 = 108000, CTP = 126000)\nlist(Mois = 1:6, C1 = c(600, 600, 600, 600, 600, 600), C2 = c(2400, 2400, 2400, 2400, 2400, 2400), C3 = c(18000, 18000, 18000, 18000, 18000, 18000), Total = c(21000, 21000, 21000, 21000, 21000, 21000))"
+            }
+          ],
+          "isError": false
+        }
+      },
+      "decoded": {
+        "totaux": {
+          "C1": 3600.0,
+          "C2": 14400.0,
+          "C3": 108000.0,
+          "CTP": 126000.0
+        },
+        "mensuel": [
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 21000.0
+          }
+        ]
+      }
+    },
+    {
+      "case": "horizon-1-mois",
+      "arguments": {
+        "c": 0.5,
+        "v": 1200,
+        "t_horizon": 1,
+        "c_orch": 2400,
+        "kappa": 1,
+        "w": 60,
+        "h1": 300,
+        "h2": 200,
+        "detail": "mensuel"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 7,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "list(C1 = 600, C2 = 2400, C3 = 18000, CTP = 21000)\nlist(Mois = 1, C1 = 600, C2 = 2400, C3 = 18000, Total = 21000)"
+            }
+          ],
+          "isError": false
+        }
+      },
+      "decoded": {
+        "totaux": {
+          "C1": 600.0,
+          "C2": 2400.0,
+          "C3": 18000.0,
+          "CTP": 21000.0
+        },
+        "mensuel": [
+          {
+            "Total": 21000.0
+          }
+        ]
+      }
+    },
+    {
+      "case": "horizon-12-mois",
+      "arguments": {
+        "c": 0.5,
+        "v": 1200,
+        "t_horizon": 12,
+        "c_orch": 2400,
+        "kappa": 1,
+        "w": 60,
+        "h1": 300,
+        "h2": 200,
+        "detail": "mensuel"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 8,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "list(C1 = 7200, C2 = 28800, C3 = 162000, CTP = 198000)\nlist(Mois = 1:12, C1 = c(600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600), C2 = c(2400, 2400, 2400, 2400, 2400, 2400, 2400, 2400, 2400, 2400, 2400, 2400), C3 = c(18000, 18000, 18000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000), Total = c(21000, 21000, 21000, 15000, 15000, 15000, 15000, 15000, 15000, 15000, 15000, 15000))"
+            }
+          ],
+          "isError": false
+        }
+      },
+      "decoded": {
+        "totaux": {
+          "C1": 7200.0,
+          "C2": 28800.0,
+          "C3": 162000.0,
+          "CTP": 198000.0
+        },
+        "mensuel": [
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 21000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          }
+        ]
+      }
+    },
+    {
+      "case": "surcharge-calibrage",
+      "arguments": {
+        "c": 0.5,
+        "v": 1200,
+        "t_horizon": 6,
+        "c_orch": 2400,
+        "kappa": 1,
+        "w": 60,
+        "h1": 700,
+        "h2": 200,
+        "detail": "mensuel"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 9,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "list(C1 = 3600, C2 = 14400, C3 = 162000, CTP = 180000)\nlist(Mois = 1:6, C1 = c(600, 600, 600, 600, 600, 600), C2 = c(2400, 2400, 2400, 2400, 2400, 2400), C3 = c(42000, 42000, 42000, 12000, 12000, 12000), Total = c(45000, 45000, 45000, 15000, 15000, 15000))"
+            }
+          ],
+          "isError": false
+        }
+      },
+      "decoded": {
+        "totaux": {
+          "C1": 3600.0,
+          "C2": 14400.0,
+          "C3": 162000.0,
+          "CTP": 180000.0
+        },
+        "mensuel": [
+          {
+            "Total": 45000.0
+          },
+          {
+            "Total": 45000.0
+          },
+          {
+            "Total": 45000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          },
+          {
+            "Total": 15000.0
+          }
+        ]
+      }
+    },
+    {
+      "case": "calibrage-non-entier-refuse",
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 10,
+        "error": {
+          "code": -32603,
+          "message": "calibration_months doit être un entier."
+        }
+      }
+    }
+  ]
+}

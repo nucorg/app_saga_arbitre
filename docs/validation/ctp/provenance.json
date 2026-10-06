@@ -1,0 +1,10 @@
+{
+  "source_repo": "/home/boris/VIBE/projets/app_saga_arbitre",
+  "base_commit": "4b71e1293dfb5fd83853e42cb28103e1c10f889b",
+  "math_sha256": "7411f1d843fc6dd1cdbe104c6e9fda6c0ad38a08d32e23f37a8db11838a96496",
+  "ctp_module_sha256": "4a191908eb3dd0f99ade6f6fa9b413f70da05147a30693f0fb0dde798a6b666f",
+  "other_tabs_preserved": true,
+  "existing_deployment_record_preserved": true,
+  "tests": 38,
+  "assertions": 268
+}

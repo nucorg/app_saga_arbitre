@@ -29,41 +29,28 @@ compute_roi <- function(cost_manual, cost_agent, volume_mensuel, build_initial_i
   )
 }
 
-#' Calcul des totaux par couche du CTP sur l'horizon donné
-#' @return list(C1, C2, C3, CTP)
-compute_ctp_totals <- function(c, v, t_horizon, c_orch, kappa, w, h1, h2) {
-  c1_total <- c * v * t_horizon
-  c2_total <- c_orch * kappa * t_horizon
-  
-  months_calib <- min(t_horizon, 3)
-  months_crois <- max(0, t_horizon - 3)
-  c3_total <- w * ((h1 * months_calib) + (h2 * months_crois))
-  
-  ctp <- c1_total + c2_total + c3_total
-  list(C1 = c1_total, C2 = c2_total, C3 = c3_total, CTP = ctp)
+#' Série de coûts d'exploitation ; calibrage paramétrable, trois mois par défaut.
+compute_ctp_monthly <- function(c, v, t_horizon, c_orch, kappa, w, h1, h2,
+                                calibration_months = 3) {
+  args <- list(c=c, v=v, t_horizon=t_horizon, c_orch=c_orch, kappa=kappa,
+               w=w, h1=h1, h2=h2, calibration_months=calibration_months)
+  valid <- vapply(args, function(x) is.numeric(x) && length(x)==1L &&
+    !is.na(x) && is.finite(x) && x >= 0, logical(1))
+  if (!all(valid) || t_horizon < 1 || t_horizon != floor(t_horizon) ||
+      calibration_months != floor(calibration_months))
+    stop("Coûts et heures positifs ou nuls ; horizon entier positif et durée de calibrage entière positive ou nulle requis.")
+  months <- seq_len(t_horizon)
+  c1 <- rep(c * v, t_horizon)
+  c2 <- rep(c_orch * kappa, t_horizon)
+  c3 <- w * ifelse(months <= calibration_months, h1, h2)
+  data.frame(Mois=months, C1=c1, C2=c2, C3=c3, Total=c1+c2+c3)
 }
 
-#' Calcul mensuel du CTP pour tracer la courbe (Le "Genou")
-#' @return data.frame(Mois, C1, C2, C3, Total)
-compute_ctp_monthly <- function(c, v, t_horizon, c_orch, kappa, w, h1, h2) {
-  if(t_horizon < 1) return(data.frame())
-  months <- 1:t_horizon
-  
-  monthly_c1 <- rep(c * v, t_horizon)
-  monthly_c2 <- rep(c_orch * kappa, t_horizon)
-  
-  monthly_h <- ifelse(months <= 3, h1, h2)
-  monthly_c3 <- w * monthly_h
-  
-  monthly_total <- monthly_c1 + monthly_c2 + monthly_c3
-  
-  data.frame(
-    Mois = months,
-    C1 = monthly_c1,
-    C2 = monthly_c2,
-    C3 = monthly_c3,
-    Total = monthly_total
-  )
+#' Totaux dérivés de la même série que les graphiques.
+compute_ctp_totals <- function(c, v, t_horizon, c_orch, kappa, w, h1, h2,
+                               calibration_months = 3) {
+  monthly <- compute_ctp_monthly(c,v,t_horizon,c_orch,kappa,w,h1,h2,calibration_months)
+  list(C1=sum(monthly$C1), C2=sum(monthly$C2), C3=sum(monthly$C3), CTP=sum(monthly$Total))
 }
 
 #' Calcul du coût de l'inférence C1 (en USD)

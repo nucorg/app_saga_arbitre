@@ -1,4 +1,5 @@
 source("../../R/logic_maths.R")
+source("../../R/logic_ctp.R")
 source("../../R/logic_monthly.R")
 source("../../R/logic_parsers.R")
 source("../../R/server.R")
@@ -21,7 +22,7 @@ test_that("Shiny conserve effort humain complet et C2 détaillé", {
   withr::with_dir("../..", shiny::testServer(saga_server, {
     session$setInputs(c3_v=1200, c3_escalade=20, c3_t_reprise=15,
       c3_review=5, c3_governance=40, c3_h1_input=300, c3_w=60,
-      ctp_c=.5, ctp_v=1200, ctp_t=12, ctp_orch=2400, ctp_kappa="12",
+      ctp_c1_month=600, ctp_calibration=3, ctp_investment=36000, ctp_v=1200, ctp_t=12, ctp_orch=2400, ctp_kappa="12",
       ctp_detailed=TRUE, ctp_w=60, ctp_h1=300, ctp_h2=200)
     expect_equal(c3_computation()$h2, 200)
     expect_equal(ctp_res()$C2, 28800)

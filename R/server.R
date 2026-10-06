@@ -431,65 +431,110 @@ saga_server <- function(input, output, session) {
     ggplotly(p, tooltip = c("y")) %>% layout(plot_bgcolor="transparent", paper_bgcolor="transparent")
   })
   
-  # -- Onglet CTP --
-  
+  # -- Onglet CTP : exploitation, investissement et valeur par phase --
+  ctp_inputs <- reactive({
+    x <- setNames(lapply(ctp_input_names,function(id) input[[id]]),ctp_input_names)
+    # Les anciennes radios utilisaient une chaîne ; le nouveau champ reste numérique.
+    if (!is.null(x$ctp_kappa)) x$ctp_kappa <- suppressWarnings(as.numeric(x$ctp_kappa))
+    x
+  })
   ctp_res <- reactive({
-    compute_ctp_totals(
-      c = input$ctp_c,
-      v = input$ctp_v,
-      t_horizon = input$ctp_t,
-      c_orch = input$ctp_orch,
-      kappa = if (isTRUE(input$ctp_detailed)) 1 else as.numeric(input$ctp_kappa),
-      w = input$ctp_w,
-      h1 = input$ctp_h1,
-      h2 = input$ctp_h2
-    )
+    tryCatch(compute_ctp_scenario(ctp_inputs()),error=function(e) validate(need(FALSE,conditionMessage(e))))
   })
-  
-  output$vb_c1_val <- renderUI({ h3(sprintf("%.0f €", ctp_res()$C1)) })
-  output$vb_c2_val <- renderUI({ h3(sprintf("%.0f €", ctp_res()$C2)) })
-  output$vb_c3_val <- renderUI({ h3(sprintf("%.0f €", ctp_res()$C3)) })
-  output$vb_ctp_val <- renderUI({ h2(sprintf("%.0f €", ctp_res()$CTP), style="margin:0;") })
-  
-  output$plot_ctp_donut <- renderPlotly({
-    res <- ctp_res()
-    df <- data.frame(
-      Couche = c("C1 - API", "C2 - Infra", "C3 - Humain"),
-      Cout = c(res$C1, res$C2, res$C3)
-    )
-    plot_ly(df, labels = ~Couche, values = ~Cout, type = 'pie', textinfo = 'label+percent',
-            marker = list(colors = c("#D4850F", "#FFFFFF", "#F5B041")),
-            hole = 0.4) %>%
-      layout(showlegend = FALSE, plot_bgcolor='transparent', paper_bgcolor='transparent',
-             margin = list(t = 20, b = 20, l = 20, r = 20))
+  ctp_balance <- reactive({
+    tryCatch(compute_ctp_balance(ctp_res(),ctp_inputs()),error=function(e) validate(need(FALSE,conditionMessage(e))))
   })
-  
+  observeEvent(input$load_ctp_example, {
+    x <- read_ctp_example()$inputs
+    for (id in setdiff(ctp_input_names,"ctp_detailed")) updateNumericInput(session,id,value=x[[id]])
+    updateCheckboxInput(session,"ctp_detailed",value=x$ctp_detailed)
+    showNotification("Exemple Veille — CTP à 6 mois chargé. Tous les paramètres restent modifiables.",type="message")
+  })
+  ctp_fmt <- function(x,digits=NULL) {
+    if (length(x)!=1 || is.na(x)) return("Non déterminé")
+    if (is.null(digits)) digits <- if (abs(x-round(x)) < 1e-8) 0 else 2
+    formatC(x,format="f",digits=digits,big.mark="\u202f",decimal.mark=",")
+  }
+  ctp_eur <- function(x) if (length(x)!=1 || is.na(x)) "Non déterminé" else paste0(ctp_fmt(x),"\u00a0€")
+  output$ctp_c2_hint <- renderText({
+    r <- ctp_res();x <- ctp_inputs()
+    if (isTRUE(x$ctp_detailed)) paste0("Total retenu : ",ctp_eur(r$effective_c2),"/mois, sans majoration.")
+    else paste0("Base ",ctp_eur(x$ctp_orch)," × ",ctp_fmt(x$ctp_kappa,2)," = ",ctp_eur(r$effective_c2),"/mois retenus.")
+  })
+  output$ctp_summary <- renderUI({
+    r <- ctp_res();x <- ctp_inputs()
+    metric <- function(label,value,id) div(class="monthly-metric",span(label),
+      strong(ctp_eur(value),id=id,`data-value`=if(is.na(value)) "unknown" else value))
+    tagList(p(strong(paste0("T = ",x$ctp_t," mois depuis le démarrage"))),
+      div(class="monthly-metrics",
+        metric("CTP d’exploitation",r$CTP,"ctp-exploitation"),
+        metric("Investissement initial",r$investment,"ctp-investment"),
+        metric("CTP du projet",r$project,"ctp-project")),
+      if(is.na(r$investment)) p("Investissement inconnu : le coût d’exploitation reste calculable ; le CTP du projet et le solde après investissement ne sont pas déterminés.")
+      else p(paste0(ctp_eur(r$CTP)," d’exploitation + ",ctp_eur(r$investment)," d’investissement initial = ",ctp_eur(r$project)," pour le projet.")))
+  })
+  output$ctp_breakdown <- renderTable({
+    r <- ctp_res();x <- ctp_inputs()
+    data.frame(Poste=c("C1 — Utilisation des modèles","C2 — Infrastructure logicielle","C3 — Travail humain","CTP d’exploitation","Investissement initial","CTP du projet"),
+      Calcul=c(paste0(ctp_eur(x$ctp_c1_month)," × ",x$ctp_t," mois"),
+        paste0(ctp_eur(r$effective_c2)," × ",x$ctp_t," mois"),
+        paste0("(",r$calibration_months," × ",ctp_fmt(x$ctp_h1)," h + ",r$cruise_months," × ",ctp_fmt(x$ctp_h2)," h) × ",ctp_eur(x$ctp_w),"/h"),
+        "C1 + C2 + C3","Une seule fois au démarrage","Exploitation + investissement"),
+      `Montant sur T`=vapply(c(r$C1,r$C2,r$C3,r$CTP,r$investment,r$project),ctp_eur,character(1)),check.names=FALSE)
+  },striped=TRUE,spacing="s",width="100%",rownames=FALSE)
+  output$ctp_phase_hint <- renderText({
+    r <- ctp_res();x <- ctp_inputs()
+    if (x$ctp_calibration==0) return(paste0("Aucun calibrage simulé : croisière du mois 1 au mois ",x$ctp_t,"."))
+    if (r$cruise_months==0) return(paste0("Tout l’horizon étudié est en calibrage (",r$calibration_months," mois). La croisière se situe après T."))
+    paste0("Calibrage : mois 1 à ",r$calibration_months," ; croisière : mois ",r$calibration_months+1," à ",x$ctp_t,".")
+  })
   output$plot_ctp_line <- renderPlotly({
-    df_monthly <- compute_ctp_monthly(
-      c = input$ctp_c,
-      v = input$ctp_v,
-      t_horizon = input$ctp_t,
-      c_orch = input$ctp_orch,
-      kappa = if (isTRUE(input$ctp_detailed)) 1 else as.numeric(input$ctp_kappa),
-      w = input$ctp_w,
-      h1 = input$ctp_h1,
-      h2 = input$ctp_h2
-    )
-    
-    p <- ggplot(df_monthly, aes(x = Mois, y = Total)) +
-      geom_line(color = "#D4850F", linewidth = 1.5) +
-      geom_point(color = "#D4850F", size = 3) +
-      {if(input$ctp_t > 3) geom_vline(xintercept = 3.5, linetype = "dashed", color = "gray50")} +
-      labs(x = "Mois", y = "Coût Mensuel (€)") +
-      scale_x_continuous(breaks = 1:input$ctp_t) +
-      theme_minimal(base_size = 14) +
-      theme(
-        panel.background = element_rect(fill = "transparent", color = NA),
-        plot.background = element_rect(fill = "transparent", color = NA),
-        text = element_text(color = "white"),
-        axis.text = element_text(color = "white"),
-        panel.grid.minor = element_blank()
-      )
-    ggplotly(p, tooltip = c("x", "y")) %>% layout(plot_bgcolor="transparent", paper_bgcolor="transparent")
+    df <- ctp_res()$monthly
+    df$Phase <- factor(df$Phase,levels=c("Calibrage","Croisière"))
+    plot_ly(df,x=~Mois,y=~Total,color=~Phase,colors=c("#D4850F","#779FCB"),type="bar",
+      hovertemplate="Mois %{x}<br>%{fullData.name} : %{y:.2f} €<extra></extra>") %>%
+      layout(barmode="stack",font=list(color="white",family="system-ui, sans-serif"),
+        plot_bgcolor="transparent",paper_bgcolor="transparent",margin=list(t=15,b=70,l=70,r=15),
+        xaxis=list(title="Mois depuis le démarrage",dtick=1),yaxis=list(title="Coût du mois (€)",rangemode="tozero"),
+        legend=list(orientation="h",x=0,y=-.3,title=list(text=""))) %>% config(displayModeBar=FALSE)
   })
+  output$plot_ctp_cumulative <- renderPlotly({
+    r <- ctp_res();m <- c(0,r$monthly$Mois)
+    p <- plot_ly(x=m,y=c(0,r$monthly$Cumul_exploitation),type="scatter",mode="lines+markers",
+      name="Exploitation",line=list(color="#779FCB"),hovertemplate="Mois %{x} : %{y:.2f} €<extra>Exploitation</extra>")
+    if(!is.na(r$investment)) p <- add_trace(p,x=m,y=c(r$investment,r$monthly$Cumul_projet),
+      name="Projet, investissement inclus",line=list(color="#D4850F"),hovertemplate="Mois %{x} : %{y:.2f} €<extra>Projet</extra>")
+    layout(p,font=list(color="white",family="system-ui, sans-serif"),plot_bgcolor="transparent",paper_bgcolor="transparent",
+      margin=list(t=15,b=75,l=70,r=15),xaxis=list(title="Mois — 0 : investissement initial",dtick=1),
+      yaxis=list(title="Coût cumulé (€)",rangemode="tozero"),legend=list(orientation="h",x=0,y=-.3)) %>% config(displayModeBar=FALSE)
+  })
+  output$ctp_balance_summary <- renderUI({
+    b <- ctp_balance();r <- ctp_res()
+    tagList(p(paste0(ctp_fmt(b$manual_hours)," h manuelles − ",ctp_fmt(b$human_hours)," h avec le dispositif = ",ctp_fmt(b$net_hours)," h nettes sur T.")),
+      p(paste0(ctp_fmt(b$reallocated_hours)," h réaffectées ; valeur conventionnelle : ",ctp_eur(b$value),".")),
+      if (b$penalty>0) p(paste0("Surcharge dans certaines phases : ",ctp_eur(b$penalty)," de pénalité, comptée intégralement avant de sommer les phases.")),
+      div(class="monthly-metric",span(paste0("Solde conventionnel sur ",ctp_inputs()$ctp_t," mois, après investissement")),
+        strong(ctp_eur(b$balance),id="ctp-balance",`data-value`=if(is.na(b$balance)) "unknown" else b$balance)),
+      if(is.na(r$investment)) p(paste0("Investissement inconnu. Solde avant investissement uniquement : ",ctp_eur(b$before_investment),"."))
+      else p(paste0(ctp_eur(b$value)," de valeur réaffectée − ",ctp_eur(b$penalty)," de surcharge − ",ctp_eur(b$nonhuman)," de C1/C2 − ",ctp_eur(r$investment)," d’investissement = ",ctp_eur(b$balance),".")),
+      p("C3 est déjà pris en compte dans le temps net : il n’est pas soustrait une seconde fois."))
+  })
+  output$ctp_balance_table <- renderTable({
+    b <- ctp_balance();m <- b$monthly
+    df <- data.frame(Mois=m$Mois,Phase=m$Phase,`Temps net (h)`=m$Capacite_nette,
+      `Réaffecté (h)`=m$Heures_reaffectees,`Valeur (€)`=m$Valeur_reaffectee,
+      `Surcharge (€)`=m$Penalite_surcharge,`Solde avant investissement (€)`=m$Solde_avant_investissement,check.names=FALSE)
+    df[-c(1,2)] <- lapply(df[-c(1,2)],function(v) vapply(v,ctp_fmt,character(1)))
+    df
+  },striped=TRUE,digits=2,spacing="s",rownames=FALSE)
+  output$ctp_monthly_table <- renderTable({
+    m <- ctp_res()$monthly
+    df <- data.frame(Mois=m$Mois,Phase=m$Phase,`Humain (h)`=m$Heures,`C1 (€)`=m$C1,`C2 (€)`=m$C2,
+      `C3 (€)`=m$C3,`Total du mois (€)`=m$Total,`Exploitation cumulée (€)`=m$Cumul_exploitation,
+      `Projet cumulé (€)`=m$Cumul_projet,check.names=FALSE)
+    df[-c(1,2)] <- lapply(df[-c(1,2)],function(v) vapply(v,ctp_fmt,character(1)))
+    df
+  },striped=TRUE,digits=2,spacing="s",na="Non déterminé",rownames=FALSE)
+
+
 }

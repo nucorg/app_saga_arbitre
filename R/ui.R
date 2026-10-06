@@ -99,6 +99,7 @@ saga_ui <- function() {
         .monthly-workspace td, .monthly-workspace th { vertical-align: middle; }
         .monthly-workspace .table { --bs-table-bg: transparent; --bs-table-color: #fff; }
         .monthly-workspace .table tr:last-child { font-weight: 700; }
+        #ctp_balance_table tr:last-child, #ctp_monthly_table tr:last-child { font-weight: normal; }
         .monthly-number { white-space: nowrap; }
         /* Formulaires, valeurs et typographie */
         .shiny-input-container label, .control-label, .form-group label { color: #FFFFFF !important; }
@@ -267,40 +268,63 @@ saga_ui <- function() {
     ),
 
     nav_panel("Diagnostic d'Investissement (CTP)",
-      layout_sidebar(
-        sidebar = sidebar(
-          title = "Paramètres du Dispositif",
-          sliderInput("ctp_t", "Horizon temporel (mois) :", min = 1, max = 24, value = 6),
-          numericInput("ctp_v", "Volume entrant mensuel :", value = 500, min = 1),
-          numericInput("ctp_c", "Co\u00fbt par tentative (C\u2081) :", value = 0.05, min = 0, step = 0.01),
-          numericInput("ctp_orch", "C\u2082 : Orchestration/mois (\u20ac) :", value = 218, min = 0),
-          checkboxInput("ctp_detailed", "C2 est déjà le total détaillé (κ = 1)", value = TRUE),
-          radioButtons("ctp_kappa", "Complexit\u00e9 (\u03ba) :", choices = c("Agent simple (\u03ba=1)" = 1, "Multi-outils (\u03ba=4)" = 4, "Multi-agents (\u03ba=12)" = 12), selected = 1),
-          numericInput("ctp_w", "Co\u00fbt horaire humain (w) :", value = 15, min = 1),
-          numericInput("ctp_h1", "Heures/mois (Calibrage h\u2081) :", value = 10, min = 0),
-          numericInput("ctp_h2", "Heures/mois (Croisi\u00e8re h\u2082) :", value = 2, min = 0)
+      layout_sidebar(fillable=FALSE, fill=FALSE,
+        sidebar=sidebar(title="Votre projet sur T mois", width=370,
+          class="monthly-sidebar", gap="0.5rem", padding="1rem",
+          actionButton("load_ctp_example", "Charger l’exemple — Veille, CTP à 6 mois", class="btn-primary"),
+          helpText("Charge tous les paramètres de cet onglet, y compris ceux du solde. Les autres onglets restent indépendants."),
+          h5("1. Période et activité"),
+          numericInput("ctp_t", "Horizon étudié T, depuis le démarrage (mois)", 6, min=1, max=24, step=1),
+          numericInput("ctp_v", "Nombre d’entrées à traiter par mois", 500, min=1),
+          h5("2. Fonctionnement"),
+          numericInput("ctp_c1_month", "C1 — Utilisation des modèles (€/mois)", 25, min=0, step=.01),
+          helpText("Toutes les tentatives sont comprises. Le budget saisi reste constant si le volume change."),
+          numericInput("ctp_orch", "C2 — Infrastructure logicielle (€/mois)", 218, min=0),
+          textOutput("ctp_c2_hint"),
+          tags$details(tags$summary("Estimation avancée de C2"),
+            checkboxInput("ctp_detailed", "C2 est un total mensuel déjà évalué", TRUE),
+            conditionalPanel("!input.ctp_detailed",
+              helpText("Le montant C2 saisi devient une base à majorer. Choisissez un coefficient justifié par votre scénario ; ce n’est pas une mesure automatique de complexité."),
+              numericInput("ctp_kappa", "Coefficient appliqué à la base C2", 1, min=1, step=.1))),
+          h5("3. Travail humain"),
+          numericInput("ctp_w", "Coût horaire humain de référence (€/h)", 15, min=0),
+          numericInput("ctp_calibration", "Durée du calibrage (mois)", 3, min=0, max=120, step=1),
+          helpText("Une hypothèse à confronter au fonctionnement observé, pas une garantie de stabilisation."),
+          numericInput("ctp_h1", "Travail humain pendant le calibrage (h/mois)", 10, min=0),
+          numericInput("ctp_h2", "Travail humain en croisière (h/mois)", 2, min=0),
+          helpText("Revue, corrections, supervision et maintenance. Les heures de calibrage remplacent celles de croisière ; elles ne s’y ajoutent pas."),
+          h5("4. Investissement"),
+          numericInput("ctp_investment", "Investissement initial du dispositif (€)", NA_real_, min=0),
+          helpText("Laissez vide s’il est inconnu. Saisissez zéro seulement s’il est nul. Il est compté une seule fois au démarrage, sans répartition analytique sur 24 mois.")
         ),
-        layout_columns(
-          col_widths = c(3, 3, 3, 3),
-          value_box("Total C\u2081 (API)", uiOutput("vb_c1_val"), theme = "secondary"),
-          value_box("Total C\u2082 (Infra)", uiOutput("vb_c2_val"), theme = "secondary"),
-          value_box("Total C\u2083 (Humain)", uiOutput("vb_c3_val"), theme = "secondary"),
-          value_box("CTP Global", uiOutput("vb_ctp_val"), theme = "primary")
-        ),
-        layout_columns(
-          col_widths = c(6, 6),
-          card(
-            card_header("L'Iceberg des Coûts (Répartition)"),
-            plotlyOutput("plot_ctp_donut")
-          ),
-          card(
-            card_header("Coût mensuel — hypothèse de calibrage de trois mois"),
-            plotlyOutput("plot_ctp_line")
-          )
+        tags$div(class="monthly-workspace",
+          h3("Du fonctionnement au coût total du projet"),
+          p("Tous les montants cumulés portent sur l’horizon T, depuis le démarrage. C1 et C2 restent constants chaque mois ; la charge humaine suit les deux phases choisies."),
+          card(id="ctp-result-card",card_header("Coût total de possession sur l’horizon choisi"),
+            uiOutput("ctp_summary"),
+            div(tableOutput("ctp_breakdown"), style="overflow-x:auto")),
+          card(card_header("Coût de fonctionnement de chaque mois"),
+            textOutput("ctp_phase_hint"), plotlyOutput("plot_ctp_line",height="290px")),
+          card(card_header("Coût cumulé depuis le démarrage"),
+            p("Au mois zéro : l’investissement initial. Ensuite : les coûts de fonctionnement, sans ajouter de parts analytiques."),
+            plotlyOutput("plot_ctp_cumulative",height="300px")),
+          tags$details(id="ctp-balance-panel",class="monthly-details",
+            tags$summary("Temps libéré et solde conventionnel"),
+            p("Comparaison à périmètre et qualité finale équivalents supposés. Le manuel de référence ne comporte ici aucun nouvel investissement."),
+            layout_columns(col_widths=c(4,4,4),fill=FALSE,fillable=FALSE,
+              numericInput("ctp_manual_minutes","Temps manuel par résultat (minutes)",30,min=0),
+              numericInput("ctp_alpha","Part du temps libéré réaffectée (%)",50,min=0,max=100),
+              numericInput("ctp_value_hour","Valeur d’une heure réaffectée (€/h)",15,min=0)),
+            p("La valeur d’une heure réaffectée peut différer du coût horaire humain. La part réaffectée doit correspondre à un usage effectif du temps disponible."),
+            uiOutput("ctp_balance_summary"),
+            div(tableOutput("ctp_balance_table"),style="overflow-x:auto"),
+            p("Une surcharge est valorisée mois par mois à son coût humain complet, sans réduction par le taux de réaffectation. Le solde ne démontre pas une économie automatique de trésorerie et ne constitue pas un verdict de rentabilité.")),
+          tags$details(class="monthly-details",tags$summary("Vérifier les opérations mois par mois"),
+            div(tableOutput("ctp_monthly_table"),style="overflow-x:auto"))
         )
       )
     ),
-    
+
     nav_panel("Prix API",
       layout_columns(
         col_widths = 12,

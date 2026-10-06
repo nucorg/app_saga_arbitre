@@ -8,8 +8,50 @@ Application R/Shiny. Les résultats dépendent de données et conventions explic
 - **C1** : simulation au catalogue de référence ou aux tarifs personnels appliqués à la session et conversion USD/EUR explicite.
 - **C2** : frais non humains fixes et variables. Fixe/variable ne signifie pas CAPEX/OPEX. Les prix sont des hypothèses locales à vérifier.
 - **C3** : revue systématique, reprises additionnelles et gouvernance/entretien. Le forfait de calibrage représente tout l’effort de cette phase ; trois mois est l’hypothèse du microscope historique.
-- **CTP** : total sur l’horizon. Les transferts C1/C2/C3 restent manuels et doivent conserver volume, devise et période. Si C2 est déjà détaillé, la case correspondante impose κ=1 et évite une seconde multiplication.
+- **CTP** : exploitation et projet sur T (six mois par défaut), calibrage modifiable, investissement distinct et solde conventionnel par phase. Préréglage Veille/Section 1 et détail mensuel vérifiable. Les onglets restent indépendants.
 - **Prix API** : tarifs personnels par session, import/export CSV et application explicite aux calculs C1.
+
+## CTP et solde conventionnel — Section 1
+
+Dans **Diagnostic d’Investissement (CTP)**, charger **Veille, CTP à 6 mois**.
+La source [data/scenarios/veille-ctp-section-1.json](data/scenarios/veille-ctp-section-1.json)
+contient les paramètres, unités et résultats attendus. Le chargement ne modifie pas les autres onglets.
+
+C1 et C2 sont saisis en EUR/mois, constants pendant l’horizon. C1 inclut les nouvelles
+tentatives. Le volume sert à la conversion unitaire du moteur et à la référence manuelle :
+modifier ce volume ne redimensionne pas automatiquement les budgets C1/C2 ni les heures C3.
+C2 est par défaut un total déjà évalué ; le coefficient n’intervient que dans le mode
+avancé explicitement activé, avec base, coefficient et montant effectif affichés.
+
+Le calibrage est modifiable (trois mois par défaut, zéro autorisé). Ses heures représentent
+la charge totale de la phase ; elles remplacent celles de croisière. Si sa durée dépasse T,
+seuls les mois compris dans T sont comptés. Le passage en croisière reste une hypothèse à
+confronter aux observations.
+
+Nominal : **108 000 EUR d’exploitation + 36 000 EUR d’investissement = 144 000 EUR de projet**
+sur six mois. Les coûts mensuels valent 21 000 EUR pendant les trois premiers mois,
+puis 15 000 EUR. La courbe cumulée du projet part de l’investissement au mois zéro.
+Aucune part d’investissement analytique n’est ajoutée. Un investissement vide reste
+inconnu : seul le coût d’exploitation est déterminé ; zéro doit être explicite.
+
+Le panneau **Temps libéré et solde conventionnel** reprend 30 minutes manuelles,
+50 % de réaffectation et 60 EUR par heure réaffectée : 2 100 heures nettes, 63 000 EUR
+valorisés, puis **+9 000 EUR** après C1/C2 et investissement. C3 est déjà incorporé au
+temps net. Une surcharge est valorisée mois par mois au coût humain complet, sans
+réduction par alpha, avant de sommer les phases. Coût horaire consommé et valeur horaire
+réaffectée sont distincts. Le scénario suppose un service comparable au manuel et aucun
+nouvel investissement manuel ; un solde positif ne prouve pas une économie de trésorerie.
+
+Le moteur conserve ses arguments historiques et ajoute `calibration_months = 3`
+aux fonctions `compute_ctp_monthly` et `compute_ctp_totals`. L’interface remplace
+`ctp_c` (EUR/entrée) par `ctp_c1_month` (EUR/mois), ajoute `ctp_calibration`,
+`ctp_investment`, `ctp_manual_minutes`, `ctp_alpha` (en %) et `ctp_value_hour`.
+Les nouvelles sorties séparent explicitement exploitation et projet ; les scripts
+historiques basés sur `vb_ctp_val` ou `plot_ctp_donut` doivent adopter le nouveau parcours.
+
+Les résultats, captures réelles, empreintes et commandes de rejeu figurent dans
+[la notice de validation CTP](docs/validation/ctp/notice.md). Les autres onglets,
+leurs conventions et les fichiers tarifaires sont préservés.
 
 ## Reproduire le coût mensuel analytique — Section 1
 

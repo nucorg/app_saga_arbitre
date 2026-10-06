@@ -1,0 +1,61 @@
+{
+  "id": "veille-ctp-section-1",
+  "version": 1,
+  "title": "Veille — CTP à 6 mois",
+  "currency": "EUR",
+  "inputs": {
+    "ctp_t": 6,
+    "ctp_v": 1200,
+    "ctp_c1_month": 600,
+    "ctp_orch": 2400,
+    "ctp_detailed": true,
+    "ctp_kappa": 1,
+    "ctp_w": 60,
+    "ctp_calibration": 3,
+    "ctp_h1": 300,
+    "ctp_h2": 200,
+    "ctp_investment": 36000,
+    "ctp_manual_minutes": 30,
+    "ctp_alpha": 50,
+    "ctp_value_hour": 60
+  },
+  "units": {
+    "ctp_t": "mois depuis le démarrage",
+    "ctp_v": "entrées/mois",
+    "ctp_c1_month": "EUR/mois toutes tentatives comprises",
+    "ctp_orch": "EUR/mois",
+    "ctp_detailed": "total C2 déjà évalué, sans coefficient",
+    "ctp_kappa": "coefficient C2, ignoré si total déjà évalué",
+    "ctp_w": "EUR/h consommée",
+    "ctp_calibration": "mois de calibrage",
+    "ctp_h1": "heures humaines totales/mois de calibrage",
+    "ctp_h2": "heures humaines totales/mois de croisière",
+    "ctp_investment": "EUR initiaux ; null si inconnu",
+    "ctp_manual_minutes": "minutes/résultat manuel",
+    "ctp_alpha": "pourcentage du temps libéré réaffecté",
+    "ctp_value_hour": "EUR/h réaffectée"
+  },
+  "expected": {
+    "C1": 3600,
+    "C2": 14400,
+    "C3": 90000,
+    "CTP": 108000,
+    "investment": 36000,
+    "project": 144000,
+    "human_hours": 1500,
+    "manual_hours": 3600,
+    "net_hours": 2100,
+    "reallocated_hours": 1050,
+    "value": 63000,
+    "penalty": 0,
+    "nonhuman": 18000,
+    "balance": 9000
+  },
+  "notes": [
+    "Budgets C1/C2 constants dans chaque mois, y compris en calibrage.",
+    "Les 300 h de calibrage remplacent les 200 h de croisière : elles ne s’y ajoutent pas.",
+    "Périmètre et qualité finale comparables au manuel supposés.",
+    "Les surcharges sont valorisées mois par mois au coût horaire, sans réduction par alpha.",
+    "Aucune répartition analytique de l’investissement dans le coût cumulé."
+  ]
+}

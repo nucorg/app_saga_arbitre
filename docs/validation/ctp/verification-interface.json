@@ -1,0 +1,337 @@
+{
+  "date": "2026-10-06T06:59:13.952Z",
+  "app": "/home/boris/VIBE/projets/app_saga_arbitre/",
+  "base_commit": "4b71e1293dfb5fd83853e42cb28103e1c10f889b",
+  "source_sha256": {
+    "R/logic_maths.R": "7411f1d843fc6dd1cdbe104c6e9fda6c0ad38a08d32e23f37a8db11838a96496",
+    "R/logic_ctp.R": "4a191908eb3dd0f99ade6f6fa9b413f70da05147a30693f0fb0dde798a6b666f",
+    "R/ui.R": "b1091f22a3a0dee4e34dd8b2d0b16d37d1cd7c29dee95671c73211f6c17b8b90",
+    "R/server.R": "e17fe65737a60cffce489a902c5e5e65187b46154be31c7a66e5a8eef833218e",
+    "app.R": "d44be13c3a8661f2a79df6c1adb73143f1536ef8ccbea3431a871fcfd9214c2e",
+    "data/scenarios/veille-ctp-section-1.json": "9b4bfd1b6e4abdaf580614c611f384fee4eb000d272bf8382dec6fce00df2fb2"
+  },
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/154.0.8037.92",
+    "revision": "@334b65d254ccc35df4fca82706d1753227b01039",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+    "jsVersion": "15.4.80.19"
+  },
+  "viewport": {
+    "width": 1440,
+    "height": 1500
+  },
+  "crop": {
+    "x": 394,
+    "y": 215.59375,
+    "width": 1007,
+    "height": 535.984375,
+    "scale": 1
+  },
+  "balanceCrop": {
+    "x": 394,
+    "y": 1703.578125,
+    "width": 1022,
+    "height": 877.484375,
+    "scale": 1
+  },
+  "layouts": [
+    {
+      "width": 1280,
+      "documentWidth": 1265,
+      "cardWidth": 847
+    },
+    {
+      "width": 390,
+      "documentWidth": 375,
+      "cardWidth": 327
+    }
+  ],
+  "tabs": [
+    "Manuel vs Agentique",
+    "C1 - Inférence",
+    "C2 - Infra",
+    "C3 - Humain",
+    "Diagnostic d'Investissement (CTP)",
+    "Prix API"
+  ],
+  "observations": [
+    {
+      "case": "nominal",
+      "inputs": {
+        "ctp_t": 6,
+        "ctp_v": 1200,
+        "ctp_c1_month": 600,
+        "ctp_orch": 2400,
+        "ctp_detailed": true,
+        "ctp_kappa": 1,
+        "ctp_w": 60,
+        "ctp_calibration": 3,
+        "ctp_h1": 300,
+        "ctp_h2": 200,
+        "ctp_investment": 36000,
+        "ctp_manual_minutes": 30,
+        "ctp_alpha": 50,
+        "ctp_value_hour": 60
+      },
+      "summary": "T = 6 mois depuis le démarrage\n\nCTP d’exploitation\n108 000 €\nInvestissement initial\n36 000 €\nCTP du projet\n144 000 €\n\n108 000 € d’exploitation + 36 000 € d’investissement initial = 144 000 € pour le projet.",
+      "balance": "3 600 h manuelles − 1 500 h avec le dispositif = 2 100 h nettes sur T.\n\n1 050 h réaffectées ; valeur conventionnelle : 63 000 €.\n\nSolde conventionnel sur 6 mois, après investissement\n9 000 €\n\n63 000 € de valeur réaffectée − 0 € de surcharge − 18 000 € de C1/C2 − 36 000 € d’investissement = 9 000 €.\n\nC3 est déjà pris en compte dans le temps net : il n’est pas soustrait une seconde fois."
+    },
+    {
+      "case": "calibrage-2-mois",
+      "inputs": {
+        "ctp_t": 6,
+        "ctp_v": 1200,
+        "ctp_c1_month": 600,
+        "ctp_orch": 2400,
+        "ctp_detailed": true,
+        "ctp_kappa": 1,
+        "ctp_w": 60,
+        "ctp_calibration": 2,
+        "ctp_h1": 300,
+        "ctp_h2": 200,
+        "ctp_investment": 36000,
+        "ctp_manual_minutes": 30,
+        "ctp_alpha": 50,
+        "ctp_value_hour": 60
+      },
+      "summary": "T = 6 mois depuis le démarrage\n\nCTP d’exploitation\n102 000 €\nInvestissement initial\n36 000 €\nCTP du projet\n138 000 €\n\n102 000 € d’exploitation + 36 000 € d’investissement initial = 138 000 € pour le projet.",
+      "balance": "3 600 h manuelles − 1 400 h avec le dispositif = 2 200 h nettes sur T.\n\n1 100 h réaffectées ; valeur conventionnelle : 66 000 €.\n\nSolde conventionnel sur 6 mois, après investissement\n12 000 €\n\n66 000 € de valeur réaffectée − 0 € de surcharge − 18 000 € de C1/C2 − 36 000 € d’investissement = 12 000 €.\n\nC3 est déjà pris en compte dans le temps net : il n’est pas soustrait une seconde fois."
+    },
+    {
+      "case": "alpha-10pct",
+      "inputs": {
+        "ctp_t": 6,
+        "ctp_v": 1200,
+        "ctp_c1_month": 600,
+        "ctp_orch": 2400,
+        "ctp_detailed": true,
+        "ctp_kappa": 1,
+        "ctp_w": 60,
+        "ctp_calibration": 3,
+        "ctp_h1": 300,
+        "ctp_h2": 200,
+        "ctp_investment": 36000,
+        "ctp_manual_minutes": 30,
+        "ctp_alpha": 10,
+        "ctp_value_hour": 60
+      },
+      "summary": "T = 6 mois depuis le démarrage\n\nCTP d’exploitation\n108 000 €\nInvestissement initial\n36 000 €\nCTP du projet\n144 000 €\n\n108 000 € d’exploitation + 36 000 € d’investissement initial = 144 000 € pour le projet.",
+      "balance": "3 600 h manuelles − 1 500 h avec le dispositif = 2 100 h nettes sur T.\n\n210 h réaffectées ; valeur conventionnelle : 12 600 €.\n\nSolde conventionnel sur 6 mois, après investissement\n-41 400 €\n\n12 600 € de valeur réaffectée − 0 € de surcharge − 18 000 € de C1/C2 − 36 000 € d’investissement = -41 400 €.\n\nC3 est déjà pris en compte dans le temps net : il n’est pas soustrait une seconde fois."
+    },
+    {
+      "case": "investissement-inconnu",
+      "inputs": {
+        "ctp_t": 6,
+        "ctp_v": 1200,
+        "ctp_c1_month": 600,
+        "ctp_orch": 2400,
+        "ctp_detailed": true,
+        "ctp_kappa": 1,
+        "ctp_w": 60,
+        "ctp_calibration": 3,
+        "ctp_h1": 300,
+        "ctp_h2": 200,
+        "ctp_investment": null,
+        "ctp_manual_minutes": 30,
+        "ctp_alpha": 10,
+        "ctp_value_hour": 60
+      },
+      "summary": "T = 6 mois depuis le démarrage\n\nCTP d’exploitation\n108 000 €\nInvestissement initial\nNon déterminé\nCTP du projet\nNon déterminé\n\nInvestissement inconnu : le coût d’exploitation reste calculable ; le CTP du projet et le solde après investissement ne sont pas déterminés.",
+      "balance": "3 600 h manuelles − 1 500 h avec le dispositif = 2 100 h nettes sur T.\n\n210 h réaffectées ; valeur conventionnelle : 12 600 €.\n\nSolde conventionnel sur 6 mois, après investissement\nNon déterminé\n\nInvestissement inconnu. Solde avant investissement uniquement : -5 400 €.\n\nC3 est déjà pris en compte dans le temps net : il n’est pas soustrait une seconde fois."
+    },
+    {
+      "case": "investissement-nul",
+      "inputs": {
+        "ctp_t": 6,
+        "ctp_v": 1200,
+        "ctp_c1_month": 600,
+        "ctp_orch": 2400,
+        "ctp_detailed": true,
+        "ctp_kappa": 1,
+        "ctp_w": 60,
+        "ctp_calibration": 3,
+        "ctp_h1": 300,
+        "ctp_h2": 200,
+        "ctp_investment": 0,
+        "ctp_manual_minutes": 30,
+        "ctp_alpha": 50,
+        "ctp_value_hour": 60
+      },
+      "summary": "T = 6 mois depuis le démarrage\n\nCTP d’exploitation\n108 000 €\nInvestissement initial\n0 €\nCTP du projet\n108 000 €\n\n108 000 € d’exploitation + 0 € d’investissement initial = 108 000 € pour le projet.",
+      "balance": "3 600 h manuelles − 1 500 h avec le dispositif = 2 100 h nettes sur T.\n\n1 050 h réaffectées ; valeur conventionnelle : 63 000 €.\n\nSolde conventionnel sur 6 mois, après investissement\n45 000 €\n\n63 000 € de valeur réaffectée − 0 € de surcharge − 18 000 € de C1/C2 − 0 € d’investissement = 45 000 €.\n\nC3 est déjà pris en compte dans le temps net : il n’est pas soustrait une seconde fois."
+    },
+    {
+      "case": "sans-calibrage",
+      "inputs": {
+        "ctp_t": 6,
+        "ctp_v": 1200,
+        "ctp_c1_month": 600,
+        "ctp_orch": 2400,
+        "ctp_detailed": true,
+        "ctp_kappa": 1,
+        "ctp_w": 60,
+        "ctp_calibration": 0,
+        "ctp_h1": 300,
+        "ctp_h2": 200,
+        "ctp_investment": 36000,
+        "ctp_manual_minutes": 30,
+        "ctp_alpha": 50,
+        "ctp_value_hour": 60
+      },
+      "summary": "T = 6 mois depuis le démarrage\n\nCTP d’exploitation\n90 000 €\nInvestissement initial\n36 000 €\nCTP du projet\n126 000 €\n\n90 000 € d’exploitation + 36 000 € d’investissement initial = 126 000 € pour le projet.",
+      "balance": "3 600 h manuelles − 1 200 h avec le dispositif = 2 400 h nettes sur T.\n\n1 200 h réaffectées ; valeur conventionnelle : 72 000 €.\n\nSolde conventionnel sur 6 mois, après investissement\n18 000 €\n\n72 000 € de valeur réaffectée − 0 € de surcharge − 18 000 € de C1/C2 − 36 000 € d’investissement = 18 000 €.\n\nC3 est déjà pris en compte dans le temps net : il n’est pas soustrait une seconde fois."
+    },
+    {
+      "case": "calibrage-hors-horizon",
+      "inputs": {
+        "ctp_t": 6,
+        "ctp_v": 1200,
+        "ctp_c1_month": 600,
+        "ctp_orch": 2400,
+        "ctp_detailed": true,
+        "ctp_kappa": 1,
+        "ctp_w": 60,
+        "ctp_calibration": 12,
+        "ctp_h1": 300,
+        "ctp_h2": 200,
+        "ctp_investment": 36000,
+        "ctp_manual_minutes": 30,
+        "ctp_alpha": 50,
+        "ctp_value_hour": 60
+      },
+      "summary": "T = 6 mois depuis le démarrage\n\nCTP d’exploitation\n126 000 €\nInvestissement initial\n36 000 €\nCTP du projet\n162 000 €\n\n126 000 € d’exploitation + 36 000 € d’investissement initial = 162 000 € pour le projet.",
+      "balance": "3 600 h manuelles − 1 800 h avec le dispositif = 1 800 h nettes sur T.\n\n900 h réaffectées ; valeur conventionnelle : 54 000 €.\n\nSolde conventionnel sur 6 mois, après investissement\n0 €\n\n54 000 € de valeur réaffectée − 0 € de surcharge − 18 000 € de C1/C2 − 36 000 € d’investissement = 0 €.\n\nC3 est déjà pris en compte dans le temps net : il n’est pas soustrait une seconde fois."
+    },
+    {
+      "case": "horizon-1-mois",
+      "inputs": {
+        "ctp_t": 1,
+        "ctp_v": 1200,
+        "ctp_c1_month": 600,
+        "ctp_orch": 2400,
+        "ctp_detailed": true,
+        "ctp_kappa": 1,
+        "ctp_w": 60,
+        "ctp_calibration": 12,
+        "ctp_h1": 300,
+        "ctp_h2": 200,
+        "ctp_investment": 36000,
+        "ctp_manual_minutes": 30,
+        "ctp_alpha": 50,
+        "ctp_value_hour": 60
+      },
+      "summary": "T = 1 mois depuis le démarrage\n\nCTP d’exploitation\n21 000 €\nInvestissement initial\n36 000 €\nCTP du projet\n57 000 €\n\n21 000 € d’exploitation + 36 000 € d’investissement initial = 57 000 € pour le projet.",
+      "balance": "600 h manuelles − 300 h avec le dispositif = 300 h nettes sur T.\n\n150 h réaffectées ; valeur conventionnelle : 9 000 €.\n\nSolde conventionnel sur 1 mois, après investissement\n-30 000 €\n\n9 000 € de valeur réaffectée − 0 € de surcharge − 3 000 € de C1/C2 − 36 000 € d’investissement = -30 000 €.\n\nC3 est déjà pris en compte dans le temps net : il n’est pas soustrait une seconde fois."
+    },
+    {
+      "case": "surcharge-calibrage",
+      "inputs": {
+        "ctp_t": 6,
+        "ctp_v": 1200,
+        "ctp_c1_month": 600,
+        "ctp_orch": 2400,
+        "ctp_detailed": true,
+        "ctp_kappa": 1,
+        "ctp_w": 60,
+        "ctp_calibration": 3,
+        "ctp_h1": 700,
+        "ctp_h2": 200,
+        "ctp_investment": 36000,
+        "ctp_manual_minutes": 30,
+        "ctp_alpha": 50,
+        "ctp_value_hour": 60
+      },
+      "summary": "T = 6 mois depuis le démarrage\n\nCTP d’exploitation\n180 000 €\nInvestissement initial\n36 000 €\nCTP du projet\n216 000 €\n\n180 000 € d’exploitation + 36 000 € d’investissement initial = 216 000 € pour le projet.",
+      "balance": "3 600 h manuelles − 2 700 h avec le dispositif = 900 h nettes sur T.\n\n600 h réaffectées ; valeur conventionnelle : 36 000 €.\n\nSurcharge dans certaines phases : 18 000 € de pénalité, comptée intégralement avant de sommer les phases.\n\nSolde conventionnel sur 6 mois, après investissement\n-36 000 €\n\n36 000 € de valeur réaffectée − 18 000 € de surcharge − 18 000 € de C1/C2 − 36 000 € d’investissement = -36 000 €.\n\nC3 est déjà pris en compte dans le temps net : il n’est pas soustrait une seconde fois."
+    },
+    {
+      "case": "C2-coefficient-explicite",
+      "inputs": {
+        "ctp_t": 6,
+        "ctp_v": 1200,
+        "ctp_c1_month": 600,
+        "ctp_orch": 2400,
+        "ctp_detailed": false,
+        "ctp_kappa": 4,
+        "ctp_w": 60,
+        "ctp_calibration": 3,
+        "ctp_h1": 300,
+        "ctp_h2": 200,
+        "ctp_investment": 36000,
+        "ctp_manual_minutes": 30,
+        "ctp_alpha": 50,
+        "ctp_value_hour": 60
+      },
+      "summary": "T = 6 mois depuis le démarrage\n\nCTP d’exploitation\n151 200 €\nInvestissement initial\n36 000 €\nCTP du projet\n187 200 €\n\n151 200 € d’exploitation + 36 000 € d’investissement initial = 187 200 € pour le projet.",
+      "balance": "3 600 h manuelles − 1 500 h avec le dispositif = 2 100 h nettes sur T.\n\n1 050 h réaffectées ; valeur conventionnelle : 63 000 €.\n\nSolde conventionnel sur 6 mois, après investissement\n-34 200 €\n\n63 000 € de valeur réaffectée − 0 € de surcharge − 61 200 € de C1/C2 − 36 000 € d’investissement = -34 200 €.\n\nC3 est déjà pris en compte dans le temps net : il n’est pas soustrait une seconde fois."
+    },
+    {
+      "case": "C2-total-ignore-coefficient",
+      "inputs": {
+        "ctp_t": 6,
+        "ctp_v": 1200,
+        "ctp_c1_month": 600,
+        "ctp_orch": 2400,
+        "ctp_detailed": true,
+        "ctp_kappa": 4,
+        "ctp_w": 60,
+        "ctp_calibration": 3,
+        "ctp_h1": 300,
+        "ctp_h2": 200,
+        "ctp_investment": 36000,
+        "ctp_manual_minutes": 30,
+        "ctp_alpha": 50,
+        "ctp_value_hour": 60
+      },
+      "summary": "T = 6 mois depuis le démarrage\n\nCTP d’exploitation\n108 000 €\nInvestissement initial\n36 000 €\nCTP du projet\n144 000 €\n\n108 000 € d’exploitation + 36 000 € d’investissement initial = 144 000 € pour le projet.",
+      "balance": "3 600 h manuelles − 1 500 h avec le dispositif = 2 100 h nettes sur T.\n\n1 050 h réaffectées ; valeur conventionnelle : 63 000 €.\n\nSolde conventionnel sur 6 mois, après investissement\n9 000 €\n\n63 000 € de valeur réaffectée − 0 € de surcharge − 18 000 € de C1/C2 − 36 000 € d’investissement = 9 000 €.\n\nC3 est déjà pris en compte dans le temps net : il n’est pas soustrait une seconde fois."
+    },
+    {
+      "case": "horizon-invalide",
+      "inputs": {
+        "ctp_t": 0,
+        "ctp_v": 1200,
+        "ctp_c1_month": 600,
+        "ctp_orch": 2400,
+        "ctp_detailed": true,
+        "ctp_kappa": 4,
+        "ctp_w": 60,
+        "ctp_calibration": 3,
+        "ctp_h1": 300,
+        "ctp_h2": 200,
+        "ctp_investment": 36000,
+        "ctp_manual_minutes": 30,
+        "ctp_alpha": 50,
+        "ctp_value_hour": 60
+      },
+      "summary": "Renseignez l’horizon T (1 à 24 mois) avec un nombre valide entier.",
+      "balance": "Renseignez l’horizon T (1 à 24 mois) avec un nombre valide entier."
+    },
+    {
+      "case": "autre-onglet",
+      "label": "Manuel vs Agentique",
+      "errors": []
+    },
+    {
+      "case": "autre-onglet",
+      "label": "C1 - Inférence",
+      "errors": []
+    },
+    {
+      "case": "autre-onglet",
+      "label": "C2 - Infra",
+      "errors": []
+    },
+    {
+      "case": "autre-onglet",
+      "label": "C3 - Humain",
+      "errors": []
+    },
+    {
+      "case": "autre-onglet",
+      "label": "Prix API",
+      "errors": []
+    }
+  ]
+}
