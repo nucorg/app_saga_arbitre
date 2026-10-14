@@ -29,10 +29,10 @@ saga_ui <- function() {
     ),
     theme = bs_theme(
       bg = "#0F2035", fg = "#FFFFFF", primary = "#D4850F",
-      base_font = font_google("Inter", local = FALSE)
+      base_font = "system-ui"
     ),
     
-    # Activation de MathJax pour les formules et styles du thème Qognito
+    # Styles locaux ; aucune ressource distante nécessaire aux calculs.
     header = tags$head(
       tags$style(HTML("
         /* Brand / Titre principal en haut à gauche */
@@ -137,9 +137,7 @@ saga_ui <- function() {
         }
         .value-box-value, .value-box-title { color: #FFFFFF !important; }
         p, h1, h2, h3, h4, h5, h6 { color: #FFFFFF !important; }
-      ")),
-      tags$script(src = "https://polyfill.io/v3/polyfill.min.js?features=es6"),
-      tags$script(id = "MathJax-script", async = NA, src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js")
+      "))
     ),
     
     nav_panel("Manuel vs Agentique",

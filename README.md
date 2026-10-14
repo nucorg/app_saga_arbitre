@@ -1,169 +1,121 @@
-# SAGA Arbitre — Simulations de coûts et diagnostic H4E
+# SAGA Arbitre
 
-Application R/Shiny. Les résultats dépendent de données et conventions explicites ; ils ne certifient ni rentabilité réelle, ni qualité opérationnelle, ni conformité d’un service.
+Simulez les coûts d'un projet d'IA et examinez ses hypothèses avec une application **R/Shiny en français**. Six onglets permettent de comparer travail manuel et dispositif agentique, puis de détailler les coûts des modèles, de l'infrastructure et du travail humain.
 
-## Parcours
+Arbitre est un **compagnon gratuit et facultatif** de [SAGA-IA](https://qognito.io/formations/). Le PDF du volume 1 est autonome : aucune installation ni aucun compte Arbitre n'est nécessaire pour l'étudier. Le code de cette application est sous [licence MIT](LICENSE) ; cette licence ne couvre pas les PDF SAGA-IA payants.
 
-- **Manuel vs Agentique** : comparaison d’un mois de croisière, coûts courants et analytiques distincts, puis coûts par résultat finalement accepté. C1 et C2 sont saisis en EUR/mois ; C3 en heures mensuelles valorisées au coût horaire commun. La projection constante est secondaire et indépendante de la répartition analytique (voir ci-dessous).
-- **C1** : comparaison de trois modèles aux tarifs actifs de la session, taille moyenne d’appel, appels par entrée et budget mensuel. Choix explicite du modèle retenu et report ponctuel vers le mensuel ou le CTP.
-- **C2** : six postes récurrents en EUR/mois, total et répartition du budget. Champs vides distincts des zéros, exemple pédagogique et report ponctuel vers le mensuel ou le CTP.
-- **C3** : heures et coûts humains en calibrage et en croisière ; détail de la revue, des reprises et de la supervision. Choix de la phase pour le report mensuel ; deux phases reportées au CTP, qui conserve sa durée de calibrage.
-- **CTP** : exploitation et projet sur T (six mois par défaut), calibrage modifiable, investissement distinct et solde conventionnel par phase. Préréglage Veille/Section 1 et détail mensuel vérifiable. Les onglets restent indépendants.
-- **Prix API** : tarifs personnels par session, import/export CSV et application explicite aux calculs C1.
+> Version candidate pour la première release `v1.0.0`. Consultez les [résultats de validation](docs/validation/release-1.0.md) et la [CI](https://github.com/nucorg/app_saga_arbitre/actions) avant de choisir une version. Une plateforme n'est annoncée comme vérifiée qu'après réussite de ses contrôles.
 
-## CTP et solde conventionnel — Section 1
+![Coût mensuel dans Arbitre](docs/validation/cout-mensuel/capture-1280.png)
 
-Dans **Diagnostic d’Investissement (CTP)**, charger **Veille, CTP à 6 mois**.
-La source [data/scenarios/veille-ctp-section-1.json](data/scenarios/veille-ctp-section-1.json)
-contient les paramètres, unités et résultats attendus. Le chargement ne modifie pas les autres onglets.
+## Installation en quelques étapes
 
-C1 et C2 sont saisis en EUR/mois, constants pendant l’horizon. C1 inclut les nouvelles
-tentatives. Le volume sert à la conversion unitaire du moteur et à la référence manuelle :
-modifier ce volume ne redimensionne pas automatiquement les budgets C1/C2 ni les heures C3.
-C2 est par défaut un total déjà évalué ; le coefficient n’intervient que dans le mode
-avancé explicitement activé, avec base, coefficient et montant effectif affichés.
+Vous avez besoin de **R 4.5.2**, d'un navigateur récent et d'une connexion Internet pour télécharger le code et les dépendances. RStudio est facultatif. Aucune clé API, inscription Stripe ou connexion à un fournisseur de modèles n'est nécessaire : l'application calcule à partir des valeurs saisies, elle n'appelle pas de modèle d'IA.
 
-Le calibrage est modifiable (trois mois par défaut, zéro autorisé). Ses heures représentent
-la charge totale de la phase ; elles remplacent celles de croisière. Si sa durée dépasse T,
-seuls les mois compris dans T sont comptés. Le passage en croisière reste une hypothèse à
-confronter aux observations.
+1. Installez [R](https://cran.r-project.org/). Windows : installez aussi la version de Rtools adaptée à R si une dépendance doit être compilée. macOS : les outils de ligne de commande Xcode peuvent être nécessaires (`xcode-select --install`). Ubuntu/Debian : les compilations requièrent notamment `build-essential`, `libcurl4-openssl-dev`, `libssl-dev`, `libxml2-dev` et `libicu-dev`.
+2. Téléchargez et décompressez le code depuis le bouton **Code → Download ZIP**, ou utilisez Git :
 
-Nominal : **108 000 EUR d’exploitation + 36 000 EUR d’investissement = 144 000 EUR de projet**
-sur six mois. Les coûts mensuels valent 21 000 EUR pendant les trois premiers mois,
-puis 15 000 EUR. La courbe cumulée du projet part de l’investissement au mois zéro.
-Aucune part d’investissement analytique n’est ajoutée. Un investissement vide reste
-inconnu : seul le coût d’exploitation est déterminé ; zéro doit être explicite.
+   ```sh
+   git clone https://github.com/nucorg/app_saga_arbitre.git
+   cd app_saga_arbitre
+   ```
 
-Le panneau **Temps libéré et solde conventionnel** reprend 30 minutes manuelles,
-50 % de réaffectation et 60 EUR par heure réaffectée : 2 100 heures nettes, 63 000 EUR
-valorisés, puis **+9 000 EUR** après C1/C2 et investissement. C3 est déjà incorporé au
-temps net. Une surcharge est valorisée mois par mois au coût humain complet, sans
-réduction par alpha, avant de sommer les phases. Coût horaire consommé et valeur horaire
-réaffectée sont distincts. Le scénario suppose un service comparable au manuel et aucun
-nouvel investissement manuel ; un solde positif ne prouve pas une économie de trésorerie.
+3. Dans R/RStudio, placez-vous dans le dossier contenant `app.R`, puis restaurez les versions des packages :
 
-Le moteur conserve ses arguments historiques et ajoute `calibration_months = 3`
-aux fonctions `compute_ctp_monthly` et `compute_ctp_totals`. L’interface remplace
-`ctp_c` (EUR/entrée) par `ctp_c1_month` (EUR/mois), ajoute `ctp_calibration`,
-`ctp_investment`, `ctp_manual_minutes`, `ctp_alpha` (en %) et `ctp_value_hour`.
-Les nouvelles sorties séparent explicitement exploitation et projet ; les scripts
-historiques basés sur `vb_ctp_val` ou `plot_ctp_donut` doivent adopter le nouveau parcours.
+   ```r
+   source("renv/activate.R")
+   renv::restore(prompt = FALSE)
+   ```
 
-Les résultats, captures réelles, empreintes et commandes de rejeu figurent dans
-[la notice de validation CTP](docs/validation/ctp/notice.md). Les autres onglets,
-leurs conventions et les fichiers tarifaires sont préservés.
+   La première restauration peut prendre plusieurs minutes. Acceptez l'installation de `renv` si elle est proposée. Elle utilise une bibliothèque de projet et ne requiert aucun dossier personnel de l'auteur.
 
-## Reproduire le coût mensuel analytique — Section 1
+4. Lancez l'application :
 
-Dans **Manuel vs Agentique**, cliquer sur **Charger l’exemple — Veille, Section 1**.
-Le scénario versionné [`data/scenarios/veille-section-1.json`](data/scenarios/veille-section-1.json)
-contient tous les paramètres, unités et résultats attendus. Les champs restent modifiables.
+   ```r
+   shiny::runApp(host = "127.0.0.1", port = 3847, launch.browser = TRUE)
+   ```
 
-| Paramètre | Valeur |
-|---|---:|
-| Entrées mensuelles / acceptation finale | 1 200 / 100 % |
-| Temps manuel / coût horaire commun | 30 min / 60 EUR/h |
-| C1 / C2 | 600 / 2 400 EUR/mois |
-| C3 | 200 h/mois, soit 12 000 EUR/mois |
-| Investissement dispositif / manuel | 36 000 / 0 EUR |
-| Répartition analytique | 24 mois |
-| Projection constante | 6 mois par défaut ; 12 mois au choix |
+   Au terminal, depuis ce même dossier :
 
-Résultats : **15 000 EUR/mois courant**, **1 500 EUR/mois de part d’investissement**,
-**16 500 EUR/mois analytique** ; **12,50 EUR** et **13,75 EUR** par résultat accepté.
-C2 récurrent reste séparé de l’investissement. Le manuel est comparé au même nombre
-mensuel de résultats acceptés. Un écart de coûts n’est pas automatiquement une économie de trésorerie.
+   ```sh
+   Rscript -e 'shiny::runApp(host="127.0.0.1", port=3847, launch.browser=TRUE)'
+   ```
 
-Les montants mensuels C1/C2 et les heures C3 restent fixes si le volume ou l’acceptation
-changent. C1 inclut les nouvelles tentatives. Une acceptation nulle conserve les budgets
-mais rend les ratios et projections comparatives non définis. Les valeurs manquantes,
-négatives, le volume nul et les durées invalides affichent une demande de correction.
+Ouvrez `http://127.0.0.1:3847` si le navigateur ne s'ouvre pas. Pour arrêter : bouton **Stop** de RStudio, **Échap** dans la console R ou **Ctrl+C** au terminal. L'application reste accessible uniquement sur votre ordinateur avec cette commande.
 
-**Ajouter à la comparaison — session** conserve les hypothèses et résultats en mémoire,
-ainsi que la référence manuelle propre à chaque scénario. La simulation courante reste
-visible. Ce bouton n’exporte pas un scénario et les comparaisons disparaissent à la fin
-de la session. Le fichier versionné constitue la référence reproductible du pilote.
+Après l'installation, les calculs et ressources de l'interface fonctionnent sans connexion Internet. Les prix API inclus sont des références datées, pas des prix récupérés automatiquement en temps réel.
 
-La **projection cumulée à charge constante**, repliée initialement, compte l’investissement
-une seule fois au mois zéro, puis les coûts courants. Modifier la durée de répartition
-analytique n’affecte pas cette courbe. Elle ne reproduit pas le CTP du cours avec calibrage.
-Les **24 mois de répartition** et l’**horizon de projection** sont deux paramètres distincts.
+## Premier exercice : comparer les coûts mensuels
 
-Compatibilité : l’ancien champ `cost_tokens` (EUR/entrée) devient `cost_c1_month`
-(EUR/mois). Les scripts de saisie visant ce dépôt doivent multiplier le coût unitaire
-par le volume avant de renseigner ce champ. `ps` est désormais une saisie numérique,
-toujours en pourcentage.
-Le moteur historique garde ses signatures et ses unités. Le report conserve les six onglets publics et leur gestion des tarifs personnels par session.
+Dans **Manuel vs Agentique**, cliquez sur **Charger l'exemple — Veille, Section 1**.
 
-## Tarifs personnels et catalogue de référence
+| Repère | Résultat attendu |
+| --- | ---: |
+| Volume mensuel, acceptation finale | 1 200 entrées, 100 % |
+| C1 : appels aux modèles | 600 €/mois |
+| C2 : infrastructure et logiciels | 2 400 €/mois |
+| C3 : travail humain, 200 h × 60 € | 12 000 €/mois |
+| Coût courant | **15 000 €/mois** |
+| Coût analytique avec investissement réparti | **16 500 €/mois** |
+| Coût analytique par résultat accepté | **13,75 €** |
 
-Le fichier `data/pricing_models.csv` est une référence en lecture seule pour les visiteurs. À l’ouverture d’une session, chaque utilisateur en reçoit sa propre copie. Aucun bouton de l’application n’écrit dans ce fichier.
+Modifiez ensuite une hypothèse, observez l'effet et utilisez **Ajouter à la comparaison — session** pour conserver une variante tant que la session reste ouverte. Les paramètres complets figurent dans [le scénario versionné](data/scenarios/veille-section-1.json).
 
-- **Modifier, ajouter ou supprimer** prépare la table affichée. Les calculs utilisent les derniers tarifs appliqués ; un message indique les modifications en attente.
-- **Appliquer à ma simulation** utilise cette table dans C1, pour cette session uniquement. Les modèles déjà sélectionnés restent sélectionnés s’ils existent encore.
-- **Exporter mes tarifs** télécharge la table affichée, y compris ses modifications non appliquées. Le fichier CSV UTF-8 conserve les accents, les guillemets et les valeurs facultatives absentes.
-- **Importer mes tarifs** remplace la table affichée après validation. Il faut ensuite appliquer les tarifs pour modifier les calculs. Un fichier refusé laisse la table et les calculs précédents intacts.
-- **Rétablir les tarifs de référence** remplace immédiatement la table et les tarifs actifs de la session par sa référence initiale.
+Un écart de coûts ou un solde positif ne prouve pas une économie de trésorerie. La qualité du service comparé, les hypothèses et l'utilisation effective du temps libéré restent à examiner.
 
-Les tarifs personnels ne sont pas conservés au-delà de la session. Exporter avant de quitter, puis importer à la prochaine visite. Un utilisateur ne voit jamais les tarifs personnels d’un autre ; une nouvelle session retrouve la référence.
+## Six onglets, des reports explicites
 
-L’import accepte un CSV UTF-8 (avec ou sans BOM), séparé par des virgules ou des points-virgules. Colonnes requises : `Identifiant`, `p_in_1M`, `p_out_1M`. Colonnes facultatives : `Fournisseur`, `p_cache_1M`, `date_verification`. Les colonnes inconnues ou dupliquées sont refusées. Les prix sont en USD par million de jetons, finis et positifs ou nuls ; les décimales peuvent utiliser un point ou une virgule. Le cache peut rester vide. Les identifiants sont non vides et uniques sans distinction de casse. Les dates utilisent `AAAA-MM-JJ` ou restent vides, sans date de vérification inventée. Le catalogue doit contenir au moins un modèle.
+| Onglet | Ce qu'il permet |
+| --- | --- |
+| Manuel vs Agentique | Comparer les coûts courants, analytiques et par résultat accepté. |
+| C1 | Estimer les dépenses API et choisir le modèle à reporter. |
+| C2 | Additionner six postes récurrents mensuels. Un champ vide reste inconnu. |
+| C3 | Estimer revue, reprises et supervision pendant calibrage et croisière. |
+| CTP | Examiner l'exploitation et l'investissement sur un horizon choisi. |
+| Prix API | Modifier, importer et exporter les tarifs propres à votre session. |
 
-Pour modifier la référence proposée aux prochaines sessions, le mainteneur met à jour le CSV du dépôt et redéploie l’application. Les sessions déjà ouvertes gardent leur copie initiale.
+Les boutons de report remplacent les valeurs concernées dans l'onglet destination. Les onglets ne restent **pas synchronisés** après une modification : reportez à nouveau si nécessaire. C1 et C2 sont en euros par mois ; C3 est exprimé en heures et valorisé au coût horaire. L'horizon du projet et la durée de répartition analytique sont distincts.
 
-## Deux applications indépendantes
+Pour le CTP, le préréglage **Veille, CTP à 6 mois** donne 108 000 € d'exploitation et 36 000 € d'investissement, soit **144 000 €** de projet. Le solde conventionnel de **+9 000 €** dépend des hypothèses du scénario ; ce n'est pas un rendement garanti.
 
-Cette version publique conserve six pages. La copie complète locale, avec les pages « Cas M1 — Deux visions » et « Télémétrie du Terrain », les journaux et l’historique Git, se trouve dans `../app_saga_terrain/`. Voir [la procédure de séparation et de déploiement](SEPARATION.md).
+Les [conventions détaillées](docs/reference/calculs-et-historique.md) complètent ces repères.
 
-## Exécution et tests
+## Données, tarifs et vie privée
 
-Restaurer l’environnement déclaré par `renv.lock`, puis lancer `shiny::runApp()`. `app.R` charge explicitement les fonctions de `logic_maths.R`, `logic_monthly.R` et `logic_parsers.R`, puis l’interface et le serveur.
+- Vos saisies et comparaisons restent dans la mémoire de votre session. Quitter la session les perd ; aucun compte ni stockage cloud n'est créé.
+- Les tarifs personnalisés ne modifient jamais le catalogue livré ni la session d'un autre utilisateur.
+- Dans **Prix API**, exportez votre CSV avant de quitter. À la prochaine visite, importez-le, puis cliquez sur **Appliquer à ma simulation**.
+- CSV UTF-8, séparateur virgule ou point-virgule. Colonnes obligatoires : `Identifiant`, `p_in_1M`, `p_out_1M`. Facultatives : `Fournisseur`, `p_cache_1M`, `date_verification`. Les prix sont en **USD par million de jetons** ; utilisez une conversion explicite vers l'euro dans la simulation.
+- Un import invalide ne remplace pas les données actives. Les identifiants doivent être uniques ; une date renseignée suit `AAAA-MM-JJ`.
+- Aucun PDF payant ou journal interne n'est nécessaire à l'exécution de cette application.
 
-```r
-testthat::test_dir("tests/testthat")
+## Dépannage
+
+| Symptôme | Action |
+| --- | --- |
+| Package manquant | Ouvrir le bon dossier et relancer `renv::restore(prompt=FALSE)`. |
+| Erreur de compilation d'un package | Installer les outils système ci-dessus ; conserver le nom du package et l'erreur pour un signalement. |
+| `app.R` ou `R/…` introuvable | Vérifier `getwd()` ; travailler à la racine du dépôt décompressé. |
+| Port déjà utilisé | Choisir un autre port, par exemple `port=3848`. |
+| Résultat non défini | Vérifier les champs vides, unités, volume, taux d'acceptation et durées. Zéro doit être saisi explicitement. |
+| Prix modifiés sans effet | Cliquer sur **Appliquer à ma simulation**, puis refaire le report nécessaire. |
+| Paramètres disparus | Les sessions ne sont pas persistantes ; réimporter les tarifs exportés. |
+
+## Tests et versions
+
+Depuis la racine du projet, après restauration :
+
+```sh
+Rscript -e 'testthat::test_dir("tests/testthat", stop_on_failure=TRUE)'
+Rscript scripts/smoke.R
 ```
 
-Les tests couvrent les calculs des pages publiques, les six pages de navigation, l’absence des pages retirées, les tarifs, les dates et l’application des tarifs à C1, l’isolation de sessions simultanées, l’intégrité du CSV de référence et le cycle import/export/réinitialisation. Les tests d’intégration exigent les dépendances réelles et ne sont pas ignorés silencieusement.
+La CI restaure le même `renv.lock` sur Linux, Windows et macOS. Les tests vérifient les calculs, valeurs invalides, six pages, reports, import/export, isolation entre sessions et intégrité du catalogue. Le contrôle de démarrage charge réellement l'application.
 
-Pour l’audit du 27 septembre 2026, les dépendances absentes ont été installées dans `/tmp/saga-r-lib` sans modifier la bibliothèque personnelle ni `renv.lock`. Commande de reproduction dans cet environnement temporaire : `R_LIBS=/tmp/saga-r-lib Rscript --vanilla -e 'testthat::test_dir("tests/testthat")'`. Une autre machine doit restaurer les dépendances du projet.
+Pour signaler un problème, utilisez les [issues GitHub](https://github.com/nucorg/app_saga_arbitre/issues) : système, version de R, version du dépôt, étapes, résultat attendu et résultat obtenu. Fournissez un scénario fictif reproductible, sans donnée client ni secret. Le support communautaire n'inclut pas de délai contractuel ou de conseil personnalisé.
 
-Voir le dossier [audit documentaire M1](../../KNOWLEDGE/SAGA-IA/M1/AUDIT_H4E/RAPPORT.md). Les données des préréglages sont également décrites dans les deux cadrages du corpus.
+Les packages tiers gardent leurs propres licences. Le nom et les logos Qognito ne sont pas concédés comme marques par la licence MIT. Les procédures de déploiement hébergé sont réservées à la maintenance et ne sont pas requises pour installer Arbitre.
 
-## Report du parcours mensuel — 2026-10-05
+**English:** Arbitre is a free, optional simulator with a French interface. Install R, restore the project with `renv::restore()`, then run `shiny::runApp()`. No AI API key or purchase is required. The paid PDF has a separate licence.
 
-Report ciblé depuis `app_saga_terrain`, commit `f8e9506a06f4c082ab71b9e049cd4d62372750e3`. Seuls le premier onglet, ses styles, son module, son scénario et ses tests sont repris. Aucun ajout des pages internes. Les autres onglets, le catalogue de référence et la configuration de déploiement sont préservés. Voir [la validation et le rejeu](docs/validation/cout-mensuel/notice.md).
-
-## C2 — Budget mensuel par poste
-
-L’onglet C2 - Infra construit un budget à partir de six montants mensuels en euros.
-Les champs vides restent inconnus ; saisir zéro pour un poste nul. Le total n’est
-disponible qu’après saisie complète et valide. L’exemple `data/scenarios/veille-c2.json`
-totalise 2 400 €/mois : il s’agit d’une ventilation pédagogique, pas de tarifs fournisseurs.
-
-Les boutons de report remplacent uniquement C2 dans la destination choisie et
-ouvrent son onglet. Dans le CTP, le report sélectionne le total déjà évalué et
-remet le coefficient à 1. Les modifications suivantes ne sont pas synchronisées :
-il faut reporter à nouveau. Charger d’abord l’exemple de la destination pour une
-démonstration complète du cours, puis y reporter un budget personnalisé depuis C2.
-Effacer les montants C2 ne modifie pas les destinations. Les données restent propres
-à la session ; aucun import/export de budget n’est proposé.
-
-`data/pricing_infra.csv` est une référence historique non chargée par l’application.
-Les tarifs API de C1 restent indépendants. Les montants C2 excluent l’investissement,
-les appels aux modèles et le temps humain.
-
-Voir [la validation et les commandes de rejeu C2](docs/validation/c2/notice.md).
-
-## C1 et C3 — estimations et reports explicites
-
-C1 reporte seulement le budget mensuel du modèle A, B ou C retenu. L’estimation
-utilise le volume d’entrées et le nombre moyen d’appels par entrée, nouvelles
-tentatives comprises. Le volume de la destination reste inchangé.
-
-C3 reporte les heures de la phase choisie et le coût horaire vers Manuel vs Agentique.
-Ce coût horaire est commun au manuel et au dispositif. Vers le CTP, les deux charges
-mensuelles et le taux horaire sont reportés ; la durée du calibrage et l’horizon sont
-conservés. Une saisie incomplète ou invalide bloque le report. Les onglets ne sont
-pas synchronisés après une modification : cliquer à nouveau pour reporter.
-
-Voir [les hypothèses, captures, tests et commandes de rejeu C1/C3](docs/validation/c1-c3/notice.md).
+**Español:** Arbitre es un simulador gratuito y opcional con interfaz en francés. Instale R, restaure el proyecto con `renv::restore()` y ejecute `shiny::runApp()`. No requiere clave API ni compra. El PDF de pago tiene una licencia independiente.
