@@ -127,7 +127,7 @@ Les tests couvrent les calculs des pages publiques, les six pages de navigation,
 
 Pour l’audit du 27 septembre 2026, les dépendances absentes ont été installées dans `/tmp/saga-r-lib` sans modifier la bibliothèque personnelle ni `renv.lock`. Commande de reproduction dans cet environnement temporaire : `R_LIBS=/tmp/saga-r-lib Rscript --vanilla -e 'testthat::test_dir("tests/testthat")'`. Une autre machine doit restaurer les dépendances du projet.
 
-Voir le dossier [audit documentaire M1](../../KNOWLEDGE/SAGA-IA/M1/AUDIT_H4E/RAPPORT.md). Les données des préréglages sont également décrites dans les deux cadrages du corpus.
+Référence historique : audit documentaire M1 du corpus de formation, non distribué dans ce dépôt. Les préréglages utilisables sont dans `data/scenarios/`.
 
 ## Report du parcours mensuel — 2026-10-05
 
