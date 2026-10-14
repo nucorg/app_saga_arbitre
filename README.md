@@ -4,7 +4,7 @@ Simulez les coûts d'un projet d'IA et examinez ses hypothèses avec une applica
 
 Arbitre est un **compagnon gratuit et facultatif** de [SAGA-IA](https://qognito.io/formations/). Le PDF du volume 1 est autonome : aucune installation ni aucun compte Arbitre n'est nécessaire pour l'étudier. Le code de cette application est sous [licence MIT](LICENSE) ; cette licence ne couvre pas les PDF SAGA-IA payants.
 
-> Version candidate pour la première release `v1.0.0`. Consultez les [résultats de validation](docs/validation/release-1.0.md) et la [CI](https://github.com/nucorg/app_saga_arbitre/actions) avant de choisir une version. Une plateforme n'est annoncée comme vérifiée qu'après réussite de ses contrôles.
+> Version `v1.0.0` : installation, tests et chargement vérifiés sur Linux, Windows et macOS avec R 4.5.2. Consultez les [résultats de validation](docs/validation/release-1.0.md) et les [releases](https://github.com/nucorg/app_saga_arbitre/releases).
 
 ![Coût mensuel dans Arbitre](docs/validation/cout-mensuel/capture-1280.png)
 
